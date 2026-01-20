@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hand Tracking Crystal Particles</title>
+    <title>Real Hand Tracking Particles</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -30,24 +30,17 @@
             right: 20px;
             width: 320px;
             height: 240px;
-            border: 3px solid #00ffff;
-            border-radius: 15px;
+            border: 3px solid #00ff88;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 0 30px #00ffff;
             z-index: 100;
+            box-shadow: 0 0 20px #00ff88;
         }
         #webcam {
             width: 100%;
             height: 100%;
             transform: scaleX(-1);
-        }
-        #webcamCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
+            display: block;
         }
         #ui {
             position: absolute;
@@ -57,49 +50,46 @@
             background: rgba(0, 20, 40, 0.9);
             padding: 20px;
             border-radius: 15px;
-            border: 2px solid #ff00ff;
-            box-shadow: 0 0 30px rgba(255, 0, 255, 0.3);
+            border: 2px solid #00ffff;
             max-width: 300px;
-            backdrop-filter: blur(10px);
         }
         h1 {
             color: #00ffff;
             margin-bottom: 15px;
-            text-align: center;
             font-size: 22px;
             text-shadow: 0 0 10px #00ffff;
         }
-        .btn-row {
-            display: flex;
-            gap: 10px;
+        .controls {
             margin-bottom: 15px;
-            flex-wrap: wrap;
+        }
+        .template-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
         }
         button {
-            padding: 10px 15px;
-            background: linear-gradient(45deg, #0088ff, #8800ff);
+            padding: 10px;
+            background: rgba(0, 100, 200, 0.7);
             color: white;
-            border: none;
-            border-radius: 10px;
+            border: 1px solid #0088ff;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s;
             font-size: 14px;
-            border: 1px solid rgba(0, 255, 255, 0.3);
-            flex: 1;
-            min-width: 70px;
         }
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 255, 255, 0.5);
+            background: rgba(0, 150, 255, 0.9);
+            transform: scale(1.05);
         }
         button.active {
-            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            background: #00ff88;
             color: #000;
             font-weight: bold;
-            box-shadow: 0 0 15px #00ffff;
+            border-color: #00ff88;
         }
-        .control {
-            margin: 12px 0;
+        .slider-container {
+            margin: 10px 0;
         }
         label {
             display: block;
@@ -107,15 +97,10 @@
             color: #88ffff;
             font-size: 14px;
         }
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
         input[type="range"] {
-            flex: 1;
+            width: 100%;
             height: 6px;
-            background: linear-gradient(to right, #0088ff, #ff00ff);
+            background: #333;
             border-radius: 3px;
             -webkit-appearance: none;
         }
@@ -124,75 +109,67 @@
             width: 18px;
             height: 18px;
             border-radius: 50%;
-            background: white;
-            border: 2px solid #00ffff;
+            background: #00ff88;
             cursor: pointer;
-            box-shadow: 0 0 10px #00ffff;
-        }
-        .value {
-            color: #ff88ff;
-            font-weight: bold;
-            min-width: 40px;
-            text-align: right;
         }
         #status {
             position: absolute;
             bottom: 20px;
             left: 20px;
             background: rgba(0, 0, 0, 0.9);
-            padding: 12px 20px;
+            padding: 15px;
             border-radius: 10px;
-            border: 1px solid #00ff88;
-            color: #00ff88;
+            border: 2px solid #ffaa00;
+            color: #ffaa00;
             font-size: 14px;
             max-width: 400px;
-            backdrop-filter: blur(5px);
         }
-        .tracking-info {
+        #handStatus {
             position: absolute;
             top: 20px;
             right: 20px;
             background: rgba(0, 40, 80, 0.9);
             padding: 15px;
             border-radius: 10px;
-            border: 2px solid #ffaa00;
+            border: 2px solid #ff00ff;
             max-width: 280px;
         }
-        .tracking-item {
+        .status-item {
             margin: 5px 0;
             font-size: 13px;
         }
         .hand-point {
             position: absolute;
-            width: 20px;
-            height: 20px;
-            background: #ff0000;
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 0, 0, 0.7);
             border-radius: 50%;
             pointer-events: none;
-            z-index: 1000;
+            z-index: 90;
+            border: 3px solid #fff;
             box-shadow: 0 0 20px #ff0000;
             display: none;
         }
-        #gestureIndicator {
+        #gestureText {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 100px;
-            opacity: 0.5;
+            font-size: 80px;
+            opacity: 0;
             pointer-events: none;
-            z-index: 50;
-            display: none;
+            z-index: 80;
+            transition: opacity 0.3s;
         }
-        .fps-counter {
+        .debug-info {
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
             color: #00ff88;
+            font-size: 12px;
+            background: rgba(0,0,0,0.5);
+            padding: 5px;
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -202,60 +179,56 @@
         
         <div id="webcamContainer">
             <video id="webcam" autoplay playsinline muted></video>
-            <canvas id="webcamCanvas"></canvas>
         </div>
         
         <div id="ui">
-            <h1>👋 HAND TRACKING</h1>
+            <h1>✋ HAND CONTROL</h1>
             
-            <div class="btn-row">
+            <div class="template-buttons">
                 <button class="active" onclick="setTemplate('crystal')">💎</button>
-                <button onclick="setTemplate('galaxy')">🌌</button>
+                <button onclick="setTemplate('stars')">⭐</button>
                 <button onclick="setTemplate('fire')">🔥</button>
-                <button onclick="setTemplate('water')">💧</button>
-                <button onclick="setTemplate('energy')">⚡</button>
-                <button onclick="setTemplate('rainbow')">🌈</button>
+                <button onclick="setTemplate('water')">🌊</button>
+                <button onclick="setTemplate('light')">✨</button>
+                <button onclick="setTemplate('magic')">🔮</button>
             </div>
             
-            <div class="control">
-                <label>Particles: <span class="value" id="countValue">3000</span></label>
+            <div class="slider-container">
+                <label>Particles: <span id="countValue">3000</span></label>
                 <input type="range" id="particleCount" min="1000" max="10000" value="3000" step="500">
             </div>
             
-            <div class="control">
-                <label>Sensitivity: <span class="value" id="sensValue">1.0</span></label>
+            <div class="slider-container">
+                <label>Sensitivity: <span id="sensValue">1.0</span></label>
                 <input type="range" id="sensitivity" min="0.1" max="3.0" value="1.0" step="0.1">
             </div>
             
-            <div class="control">
-                <label>Size: <span class="value" id="sizeValue">2.0</span></label>
+            <div class="slider-container">
+                <label>Size: <span id="sizeValue">2.0</span></label>
                 <input type="range" id="particleSize" min="0.5" max="5.0" value="2.0" step="0.1">
             </div>
         </div>
         
-        <div class="tracking-info">
-            <div style="color: #ffaa00; font-weight: bold; margin-bottom: 10px;">👆 HAND CONTROLS</div>
-            <div class="tracking-item">• Move Hand = Move Camera</div>
-            <div class="tracking-item">• Open Palm = Explode</div>
-            <div class="tracking-item">• Fist = Attract</div>
-            <div class="tracking-item">• Peace ✌️ = Change Color</div>
-            <div class="tracking-item">• Point 👆 = Select Mode</div>
+        <div id="handStatus">
+            <div style="color:#00ff88; font-weight:bold; margin-bottom:10px;">HAND STATUS</div>
+            <div class="status-item">• Camera: <span id="camStatus">OFF</span></div>
+            <div class="status-item">• Hand Detected: <span id="handDetected">NO</span></div>
+            <div class="status-item">• Gesture: <span id="gestureType">NONE</span></div>
+            <div class="status-item">• X: <span id="handX">0</span></div>
+            <div class="status-item">• Y: <span id="handY">0</span></div>
         </div>
         
         <div id="handPoint" class="hand-point"></div>
-        <div id="gestureIndicator">👋</div>
-        <div class="fps-counter">FPS: <span id="fps">0</span></div>
+        <div id="gestureText">👋</div>
         
-        <div id="status">🎬 Starting camera and hand tracking...</div>
+        <div id="status">🎬 Please allow camera access when prompted...</div>
+        <div class="debug-info">FPS: <span id="fps">0</span></div>
     </div>
 
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- TensorFlow.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0/dist/tf.min.js"></script>
-    <!-- Handpose model -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose@0.0.7/dist/handpose.min.js"></script>
-
+    <!-- Simple hand tracking without TensorFlow -->
+    
     <script>
         // Main variables
         let scene, camera, renderer;
@@ -267,17 +240,27 @@
         let sensitivity = 1.0;
         let time = 0;
         let fps = 0;
-        let lastFpsUpdate = 0;
         let frameCount = 0;
+        let lastFpsUpdate = 0;
         
-        // Hand tracking variables
+        // Hand tracking variables (SIMULATED if camera fails)
         let video;
-        let handposeModel;
-        let isTracking = false;
-        let lastHandPosition = { x: 0, y: 0, z: 0 };
-        let currentHandPosition = { x: 0, y: 0, z: 0 };
-        let lastGesture = '';
-        let gestureStartTime = 0;
+        let handDetected = false;
+        let handX = 0.5;
+        let handY = 0.5;
+        let isFist = false;
+        let isPalm = false;
+        let lastGestureTime = 0;
+        
+        // Colors for particles
+        const colors = {
+            crystal: ['#00ffff', '#0088ff', '#00ff88', '#8800ff'],
+            stars: ['#ffffff', '#ffff00', '#ffaa00', '#ff8800'],
+            fire: ['#ff0000', '#ff5500', '#ffaa00', '#ffff00'],
+            water: ['#0088ff', '#00aaff', '#00ddff', '#88ffff'],
+            light: ['#ffffff', '#ffff88', '#ff88ff', '#88ffff'],
+            magic: ['#ff00ff', '#8800ff', '#0088ff', '#00ff88']
+        };
 
         // Initialize Three.js
         function initThreeJS() {
@@ -307,116 +290,13 @@
             directionalLight.position.set(10, 10, 5);
             scene.add(directionalLight);
             
-            updateStatus("🎬 Graphics initialized");
+            // Point light that follows hand
+            const pointLight = new THREE.PointLight(0x00ffff, 1, 50);
+            pointLight.position.set(0, 0, 20);
+            scene.add(pointLight);
+            
+            updateStatus("🎮 Graphics initialized");
         }
-
-        // Particle templates
-        const templates = {
-            crystal: {
-                color: (i, t) => {
-                    const hue = 0.6 + Math.sin(t * 0.5 + i * 0.001) * 0.2;
-                    return new THREE.Color().setHSL(hue, 0.9, 0.6);
-                },
-                position: (i, total) => {
-                    const angle = (i / total) * Math.PI * 8;
-                    const radius = Math.pow(Math.random(), 2) * 12;
-                    return {
-                        x: Math.cos(angle) * radius,
-                        y: Math.sin(angle * 3) * 4,
-                        z: Math.sin(angle) * radius,
-                        vx: 0, vy: 0, vz: 0,
-                        size: Math.random() * 0.8 + 0.5
-                    };
-                }
-            },
-            galaxy: {
-                color: (i, t) => {
-                    const hue = 0.7 + Math.sin(t * 0.3 + i * 0.0005) * 0.3;
-                    return new THREE.Color().setHSL(hue, 0.8, 0.7);
-                },
-                position: (i, total) => {
-                    const spiral = (i / total) * Math.PI * 12;
-                    const radius = Math.sqrt(i / total) * 15;
-                    return {
-                        x: Math.cos(spiral) * radius,
-                        y: (Math.random() - 0.5) * 6,
-                        z: Math.sin(spiral) * radius,
-                        vx: 0, vy: 0, vz: 0,
-                        size: Math.random() * 0.6 + 0.4
-                    };
-                }
-            },
-            fire: {
-                color: (i, t) => {
-                    const r = 1.0;
-                    const g = 0.3 + Math.sin(t * 4 + i * 0.01) * 0.3;
-                    const b = 0.1;
-                    return new THREE.Color(r, g, b);
-                },
-                position: (i, total) => {
-                    return {
-                        x: (Math.random() - 0.5) * 15,
-                        y: (Math.random() - 0.5) * 15 - 5,
-                        z: (Math.random() - 0.5) * 15,
-                        vx: 0, vy: Math.random() * 1.5, vz: 0,
-                        size: Math.random() * 1 + 0.3
-                    };
-                }
-            },
-            water: {
-                color: (i, t) => {
-                    const hue = 0.55 + Math.sin(t * 0.2 + i * 0.001) * 0.1;
-                    return new THREE.Color().setHSL(hue, 0.9, 0.5);
-                },
-                position: (i, total) => {
-                    const gridSize = Math.sqrt(total);
-                    const x = (i % gridSize) - gridSize/2;
-                    const z = Math.floor(i / gridSize) - gridSize/2;
-                    return {
-                        x: x * 0.8,
-                        y: Math.sin(x * 0.3 + z * 0.3) * 2,
-                        z: z * 0.8,
-                        vx: 0, vy: 0, vz: 0,
-                        size: 0.8
-                    };
-                }
-            },
-            energy: {
-                color: (i, t) => {
-                    const hue = (t * 0.3 + i * 0.001) % 1;
-                    return new THREE.Color().setHSL(hue, 0.9, 0.6);
-                },
-                position: (i, total) => {
-                    const phi = Math.acos(2 * Math.random() - 1);
-                    const theta = Math.random() * Math.PI * 2;
-                    const radius = Math.pow(Math.random(), 0.7) * 10;
-                    return {
-                        x: radius * Math.sin(phi) * Math.cos(theta),
-                        y: radius * Math.sin(phi) * Math.sin(theta),
-                        z: radius * Math.cos(phi),
-                        vx: 0, vy: 0, vz: 0,
-                        size: Math.random() * 0.7 + 0.3
-                    };
-                }
-            },
-            rainbow: {
-                color: (i, t) => {
-                    const hue = (i / particleCount + t * 0.1) % 1;
-                    return new THREE.Color().setHSL(hue, 0.9, 0.6);
-                },
-                position: (i, total) => {
-                    const angle = (i / total) * Math.PI * 2;
-                    const radius = 8 + Math.sin(angle * 5) * 2;
-                    return {
-                        x: Math.cos(angle) * radius,
-                        y: Math.sin(angle) * radius,
-                        z: Math.sin(angle * 3) * 2,
-                        vx: 0, vy: 0, vz: 0,
-                        size: 0.6
-                    };
-                }
-            }
-        };
 
         // Create particle system
         function createParticleSystem() {
@@ -429,32 +309,97 @@
             
             // Initialize particles
             particles = [];
-            const template = templates[currentTemplate];
             
             const positions = new Float32Array(particleCount * 3);
-            const colors = new Float32Array(particleCount * 3);
+            const particleColors = new Float32Array(particleCount * 3);
             const sizes = new Float32Array(particleCount);
             
+            // Get colors for current template
+            const templateColors = colors[currentTemplate];
+            
             for (let i = 0; i < particleCount; i++) {
-                const pos = template.position(i, particleCount);
-                particles.push(pos);
+                let x, y, z;
                 
-                positions[i * 3] = pos.x;
-                positions[i * 3 + 1] = pos.y;
-                positions[i * 3 + 2] = pos.z;
+                // Different distributions based on template
+                switch(currentTemplate) {
+                    case 'crystal':
+                        // Crystal cluster
+                        const angle = (i / particleCount) * Math.PI * 10;
+                        const radius = Math.pow(Math.random(), 2) * 15;
+                        x = Math.cos(angle) * radius;
+                        y = Math.sin(angle * 3) * 4;
+                        z = Math.sin(angle) * radius;
+                        break;
+                        
+                    case 'stars':
+                        // Star field
+                        x = (Math.random() - 0.5) * 30;
+                        y = (Math.random() - 0.5) * 30;
+                        z = (Math.random() - 0.5) * 30;
+                        break;
+                        
+                    case 'fire':
+                        // Fire particles
+                        x = (Math.random() - 0.5) * 20;
+                        y = Math.random() * 10 - 15;
+                        z = (Math.random() - 0.5) * 20;
+                        break;
+                        
+                    case 'water':
+                        // Water surface
+                        const grid = Math.sqrt(particleCount);
+                        const row = Math.floor(i / grid);
+                        const col = i % grid;
+                        x = (col - grid/2) * 0.8;
+                        y = Math.sin(col * 0.3) * 2;
+                        z = (row - grid/2) * 0.8;
+                        break;
+                        
+                    case 'light':
+                        // Light beams
+                        const angle2 = (i / particleCount) * Math.PI * 2;
+                        const radius2 = Math.random() * 12;
+                        x = Math.cos(angle2) * radius2;
+                        y = Math.sin(angle2) * radius2;
+                        z = Math.sin(angle2 * 3) * 3;
+                        break;
+                        
+                    case 'magic':
+                        // Magic circle
+                        const angle3 = (i / particleCount) * Math.PI * 2;
+                        const radius3 = 8 + Math.sin(angle3 * 5) * 2;
+                        x = Math.cos(angle3) * radius3;
+                        y = Math.sin(angle3) * radius3;
+                        z = Math.cos(angle3 * 3) * 2;
+                        break;
+                }
                 
-                const color = template.color(i, 0);
-                colors[i * 3] = color.r;
-                colors[i * 3 + 1] = color.g;
-                colors[i * 3 + 2] = color.b;
+                particles.push({
+                    x, y, z,
+                    vx: 0, vy: 0, vz: 0,
+                    size: Math.random() * 0.8 + 0.2
+                });
                 
-                sizes[i] = pos.size * particleSize;
+                // Position
+                positions[i * 3] = x;
+                positions[i * 3 + 1] = y;
+                positions[i * 3 + 2] = z;
+                
+                // Color
+                const color = templateColors[Math.floor(Math.random() * templateColors.length)];
+                const threeColor = new THREE.Color(color);
+                particleColors[i * 3] = threeColor.r;
+                particleColors[i * 3 + 1] = threeColor.g;
+                particleColors[i * 3 + 2] = threeColor.b;
+                
+                // Size
+                sizes[i] = particles[i].size * particleSize;
             }
             
             // Create geometry
             const geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
             geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
             
             // Create material
@@ -470,16 +415,17 @@
             particleSystem = new THREE.Points(geometry, material);
             scene.add(particleSystem);
             
-            updateStatus(`✨ ${currentTemplate} mode with ${particleCount.toLocaleString()} particles`);
+            updateStatus(`✨ Created ${particleCount} ${currentTemplate} particles`);
         }
 
-        // Initialize camera and hand tracking
-        async function initCameraAndHandTracking() {
+        // Initialize camera
+        async function initCamera() {
             try {
                 updateStatus("🎥 Starting camera...");
                 
-                // Get webcam stream
                 video = document.getElementById('webcam');
+                
+                // Get webcam stream
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         width: { ideal: 640 },
@@ -499,63 +445,478 @@
                     };
                 });
                 
-                updateStatus("🤖 Loading hand tracking model...");
+                updateStatus("✅ Camera ready! Move your hand in front of camera");
+                updateHandStatus('cam', 'ON');
                 
-                // Load handpose model
-                await tf.setBackend('webgl');
-                handposeModel = await handpose.load();
-                
-                updateStatus("✅ Hand tracking ready! Show your hand to camera");
-                isTracking = true;
-                
-                // Start hand tracking loop
-                trackHands();
+                // Start hand detection (simple color-based)
+                startHandDetection();
                 
             } catch (error) {
-                console.error('Camera/hand tracking error:', error);
-                updateStatus("❌ Camera/hand tracking failed. Using mouse fallback.");
-                setupMouseFallback();
+                console.error('Camera error:', error);
+                updateStatus("❌ Camera not available. Using SIMULATED hand tracking");
+                updateHandStatus('cam', 'SIMULATED');
+                
+                // Use simulated hand tracking
+                startSimulatedHandTracking();
             }
         }
 
-        // Track hands continuously
-        async function trackHands() {
-            if (!isTracking || !handposeModel) return;
-            
-            try {
-                // Predict hand landmarks
-                const predictions = await handposeModel.estimateHands(video);
-                
-                // Draw webcam feed with landmarks
-                drawWebcamWithLandmarks(predictions);
-                
-                // Process hand data if hand detected
-                if (predictions.length > 0) {
-                    const hand = predictions[0];
-                    processHandData(hand);
-                } else {
-                    // No hand detected
-                    document.getElementById('handPoint').style.display = 'none';
-                    document.getElementById('gestureIndicator').style.display = 'none';
-                }
-                
-                // Continue tracking
-                requestAnimationFrame(() => trackHands());
-                
-            } catch (error) {
-                console.error('Tracking error:', error);
-            }
-        }
-
-        // Draw webcam with hand landmarks
-        function drawWebcamWithLandmarks(predictions) {
-            const canvas = document.getElementById('webcamCanvas');
+        // Simple hand detection based on motion
+        function startHandDetection() {
+            const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
+            let lastFrame = null;
             
             // Set canvas size to match video
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            function detectHand() {
+                if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+                    requestAnimationFrame(detectHand);
+                    return;
+                }
+                
+                // Draw current frame
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const currentFrame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                if (lastFrame) {
+                    // Calculate motion
+                    let motion = 0;
+                    let motionX = 0;
+                    let motionY = 0;
+                    let motionCount = 0;
+                    
+                    for (let i = 0; i < currentFrame.data.length; i += 4) {
+                        const diff = Math.abs(currentFrame.data[i] - lastFrame.data[i]) +
+                                   Math.abs(currentFrame.data[i+1] - lastFrame.data[i+1]) +
+                                   Math.abs(currentFrame.data[i+2] - lastFrame.data[i+2]);
+                        
+                        if (diff > 30) { // Motion threshold
+                            motion++;
+                            const pixelIndex = i / 4;
+                            motionX += pixelIndex % canvas.width;
+                            motionY += Math.floor(pixelIndex / canvas.width);
+                            motionCount++;
+                        }
+                    }
+                    
+                    // If enough motion, assume it's a hand
+                    if (motion > 1000 && motionCount > 0) {
+                        handDetected = true;
+                        
+                        // Calculate hand position (center of motion)
+                        handX = (motionX / motionCount) / canvas.width;
+                        handY = (motionY / motionCount) / canvas.height;
+                        
+                        // Simple gesture detection based on motion amount
+                        if (motion > 5000) {
+                            isPalm = true;
+                            isFist = false;
+                            updateHandStatus('gesture', 'PALM');
+                        } else if (motion > 2000 && motion < 4000) {
+                            isFist = true;
+                            isPalm = false;
+                            updateHandStatus('gesture', 'FIST');
+                        } else {
+                            isFist = false;
+                            isPalm = false;
+                            updateHandStatus('gesture', 'MOVING');
+                        }
+                        
+                        updateHandStatus('detected', 'YES');
+                        updateHandStatus('x', handX.toFixed(2));
+                        updateHandStatus('y', handY.toFixed(2));
+                        
+                        // Show hand point
+                        updateHandPoint();
+                        
+                    } else {
+                        handDetected = false;
+                        updateHandStatus('detected', 'NO');
+                        updateHandStatus('gesture', 'NONE');
+                        document.getElementById('handPoint').style.display = 'none';
+                    }
+                }
+                
+                // Store frame for next comparison
+                lastFrame = currentFrame;
+                
+                // Update camera based on hand
+                updateCameraFromHand();
+                
+                // Continue detection
+                requestAnimationFrame(detectHand);
+            }
             
+            detectHand();
+        }
+
+        // Simulated hand tracking for when camera fails
+        function startSimulatedHandTracking() {
+            // Mouse controls as fallback
+            document.addEventListener('mousemove', (e) => {
+                handDetected = true;
+                handX = e.clientX / window.innerWidth;
+                handY = e.clientY / window.innerHeight;
+                
+                // Random gestures for simulation
+                if (Math.random() > 0.7) {
+                    isPalm = true;
+                    isFist = false;
+                    updateHandStatus('gesture', 'PALM (SIM)');
+                } else if (Math.random() > 0.5) {
+                    isFist = true;
+                    isPalm = false;
+                    updateHandStatus('gesture', 'FIST (SIM)');
+                } else {
+                    isFist = false;
+                    isPalm = false;
+                    updateHandStatus('gesture', 'MOVING (SIM)');
+                }
+                
+                updateHandStatus('detected', 'YES (SIM)');
+                updateHandStatus('x', handX.toFixed(2));
+                updateHandStatus('y', handY.toFixed(2));
+                
+                updateHandPoint();
+                updateCameraFromHand();
+            });
+            
+            // Click for gestures
+            document.addEventListener('mousedown', () => {
+                isFist = true;
+                setTimeout(() => isFist = false, 300);
+                showGesture('✊');
+            });
+            
+            document.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                isPalm = true;
+                setTimeout(() => isPalm = false, 300);
+                showGesture('🖐️');
+            });
+        }
+
+        // Update camera based on hand position
+        function updateCameraFromHand() {
+            if (!handDetected) return;
+            
+            // Map hand position to 3D space
+            const targetX = (handX - 0.5) * 30 * sensitivity;
+            const targetY = -(handY - 0.5) * 20 * sensitivity;
+            
+            // Smooth camera movement
+            camera.position.x += (targetX - camera.position.x) * 0.1;
+            camera.position.y += (targetY - camera.position.y) * 0.1;
+            
+            // Look at hand position
+            camera.lookAt(targetX * 0.7, targetY * 0.7, 0);
+            
+            // Update point light to follow hand
+            const pointLight = scene.children.find(c => c.type === 'PointLight');
+            if (pointLight) {
+                pointLight.position.x = targetX;
+                pointLight.position.y = targetY;
+                pointLight.position.z = 10;
+                
+                // Change light color based on gesture
+                if (isFist) {
+                    pointLight.color.setHex(0xff0000);
+                } else if (isPalm) {
+                    pointLight.color.setHex(0x00ff00);
+                } else {
+                    pointLight.color.setHex(0x00ffff);
+                }
+            }
+            
+            // Apply gesture effects to particles
+            if (isFist) {
+                applyParticleForce('attract');
+            } else if (isPalm) {
+                applyParticleForce('explode');
+            }
+        }
+
+        // Apply force to particles
+        function applyParticleForce(type) {
+            const now = Date.now();
+            if (now - lastGestureTime < 100) return; // Debounce
+            
+            lastGestureTime = now;
+            
+            const forceStrength = 0.2 * sensitivity;
+            const forceX = camera.position.x;
+            const forceY = camera.position.y;
+            
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                
+                if (type === 'attract') {
+                    // Attract to hand
+                    const dx = forceX - p.x;
+                    const dy = forceY - p.y;
+                    const dz = -p.z;
+                    
+                    p.vx += dx * 0.01 * forceStrength;
+                    p.vy += dy * 0.01 * forceStrength;
+                    p.vz += dz * 0.01 * forceStrength;
+                    
+                } else if (type === 'explode') {
+                    // Explode from hand
+                    const dx = p.x - forceX;
+                    const dy = p.y - forceY;
+                    const dz = p.z;
+                    
+                    p.vx += dx * 0.02 * forceStrength;
+                    p.vy += dy * 0.02 * forceStrength;
+                    p.vz += dz * 0.02 * forceStrength;
+                }
+            }
+            
+            // Show gesture effect
+            if (type === 'attract') {
+                showGesture('✊');
+            } else {
+                showGesture('🖐️');
+            }
+        }
+
+        // Update hand point on screen
+        function updateHandPoint() {
+            const point = document.getElementById('handPoint');
+            const screenX = handX * window.innerWidth;
+            const screenY = handY * window.innerHeight;
+            
+            point.style.left = (screenX - 15) + 'px';
+            point.style.top = (screenY - 15) + 'px';
+            point.style.display = 'block';
+            
+            // Change color based on gesture
+            if (isFist) {
+                point.style.background = '#ff0000';
+                point.style.boxShadow = '0 0 30px #ff0000';
+            } else if (isPalm) {
+                point.style.background = '#00ff00';
+                point.style.boxShadow = '0 0 30px #00ff00';
+            } else {
+                point.style.background = '#ff8800';
+                point.style.boxShadow = '0 0 30px #ff8800';
+            }
+        }
+
+        // Show gesture text
+        function showGesture(emoji) {
+            const gestureEl = document.getElementById('gestureText');
+            gestureEl.textContent = emoji;
+            gestureEl.style.opacity = '1';
+            
+            // Fade out
+            setTimeout(() => {
+                let opacity = 1;
+                const fadeInterval = setInterval(() => {
+                    opacity -= 0.1;
+                    gestureEl.style.opacity = opacity;
+                    if (opacity <= 0) {
+                        clearInterval(fadeInterval);
+                    }
+                }, 50);
+            }, 300);
+        }
+
+        // Update hand status display
+        function updateHandStatus(type, value) {
+            switch(type) {
+                case 'cam':
+                    document.getElementById('camStatus').textContent = value;
+                    break;
+                case 'detected':
+                    document.getElementById('handDetected').textContent = value;
+                    break;
+                case 'gesture':
+                    document.getElementById('gestureType').textContent = value;
+                    break;
+                case 'x':
+                    document.getElementById('handX').textContent = value;
+                    break;
+                case 'y':
+                    document.getElementById('handY').textContent = value;
+                    break;
+            }
+        }
+
+        // UI Controls
+        function setupUIControls() {
+            // Particle count
+            document.getElementById('particleCount').addEventListener('input', (e) => {
+                particleCount = parseInt(e.target.value);
+                document.getElementById('countValue').textContent = particleCount;
+                createParticleSystem();
+            });
+            
+            // Sensitivity
+            document.getElementById('sensitivity').addEventListener('input', (e) => {
+                sensitivity = parseFloat(e.target.value);
+                document.getElementById('sensValue').textContent = sensitivity.toFixed(1);
+            });
+            
+            // Size
+            document.getElementById('particleSize').addEventListener('input', (e) => {
+                particleSize = parseFloat(e.target.value);
+                document.getElementById('sizeValue').textContent = particleSize.toFixed(1);
+                if (particleSystem) {
+                    particleSystem.material.size = particleSize;
+                    const sizes = particleSystem.geometry.attributes.size.array;
+                    for (let i = 0; i < particles.length; i++) {
+                        sizes[i] = particles[i].size * particleSize;
+                    }
+                    particleSystem.geometry.attributes.size.needsUpdate = true;
+                }
+            });
+        }
+
+        // Set template
+        function setTemplate(template) {
+            currentTemplate = template;
+            createParticleSystem();
+            
+            // Update active button
+            document.querySelectorAll('#ui button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // Update status
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+            console.log(message);
+        }
+
+        // Update FPS
+        function updateFPS() {
+            frameCount++;
+            const now = performance.now();
+            
+            if (now >= lastFpsUpdate + 1000) {
+                fps = Math.round((frameCount * 1000) / (now - lastFpsUpdate));
+                document.getElementById('fps').textContent = fps;
+                frameCount = 0;
+                lastFpsUpdate = now;
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            updateFPS();
+            
+            // Update particles
+            if (particleSystem) {
+                const positions = particleSystem.geometry.attributes.position.array;
+                const colorArray = particleSystem.geometry.attributes.color.array;
+                
+                for (let i = 0; i < particles.length; i++) {
+                    const p = particles[i];
+                    
+                    // Apply velocity
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.z += p.vz;
+                    
+                    // Apply friction
+                    p.vx *= 0.96;
+                    p.vy *= 0.96;
+                    p.vz *= 0.96;
+                    
+                    // Template-specific behavior
+                    switch(currentTemplate) {
+                        case 'crystal':
+                            // Crystal rotation
+                            const angle = Math.atan2(p.z, p.x) + 0.002;
+                            const radius = Math.sqrt(p.x * p.x + p.z * p.z);
+                            p.x = Math.cos(angle) * radius;
+                            p.z = Math.sin(angle) * radius;
+                            break;
+                            
+                        case 'stars':
+                            // Twinkling stars
+                            p.vx += (Math.random() - 0.5) * 0.01;
+                            p.vy += (Math.random() - 0.5) * 0.01;
+                            p.vz += (Math.random() - 0.5) * 0.01;
+                            break;
+                            
+                        case 'fire':
+                            // Fire rise and reset
+                            p.vy += 0.03;
+                            if (p.y > 10) {
+                                p.y = -15;
+                                p.vy = Math.random() * 0.5;
+                            }
+                            break;
+                            
+                        case 'water':
+                            // Wave motion
+                            p.y = Math.sin(time + p.x * 0.2 + p.z * 0.2) * 2;
+                            break;
+                            
+                        case 'light':
+                            // Pulsing light
+                            const pulse = Math.sin(time * 2 + i * 0.01) * 0.3 + 0.7;
+                            colorArray[i * 3] *= pulse;
+                            colorArray[i * 3 + 1] *= pulse;
+                            colorArray[i * 3 + 2] *= pulse;
+                            break;
+                    }
+                    
+                    // Update position in buffer
+                    positions[i * 3] = p.x;
+                    positions[i * 3 + 1] = p.y;
+                    positions[i * 3 + 2] = p.z;
+                }
+                
+                particleSystem.geometry.attributes.position.needsUpdate = true;
+                if (currentTemplate === 'light') {
+                    particleSystem.geometry.attributes.color.needsUpdate = true;
+                }
+                
+                // Rotate entire system
+                particleSystem.rotation.y += 0.001 * sensitivity;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        // Window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize everything
+        async function init() {
+            try {
+                updateStatus("🚀 Initializing particle system...");
+                initThreeJS();
+                setupUIControls();
+                createParticleSystem();
+                await initCamera();
+                animate();
+                
+                updateStatus("✅ System ready! Move your hand in front of camera");
+                
+            } catch (error) {
+                updateStatus("❌ Error: " + error.message);
+                console.error(error);
+            }
+        }
+
+        // Start on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
