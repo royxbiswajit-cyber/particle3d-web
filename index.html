@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sci-Fi Hologram</title>
+
+<!-- THREE.js -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+
+<!-- Mediapipe Hands -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    background: black;
+    font-family: monospace;
+}
+
+video {
+    display: none;
+}
+
+canvas {
+    display: block;
+}
+</style>
+</head>
+<body>
+
+<video id="cam" autoplay playsinline></video>
+<canvas id="three"></canvas>
+
+<script type="module">
+const video = document.getElementById("cam");
+const canvas = document.getElementById("three");
+
+// Start camera
+navigator.mediaDevices.getUserMedia({ video: true }).then(stream => video.srcObject = stream);
+
+// Renderer & Scene
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+camera.position.z = 6;
+
+// 🌐 3D WORLD SETUP
+
+// Grid
+const grid = new THREE.GridHelper(50, 100, 0x00ffff, 0x003355);
+grid.position.y = -2;
+scene.add(grid);
+
+// Earth
+const earth = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 32, 32),
+    new THREE.MeshBasicMaterial({ wireframe: true, color: 0x00ffff })
+);
+scene.add(earth);
+
+// Rings
+const ring1 = new THREE.Mesh(
+    new THREE.TorusGeometry(1.4, 0.02, 16, 128),
+    new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true })
+);
+scene.add(ring1);
+
+const ring2 = new THREE.Mesh(
+    new THREE.TorusGeometry(1.8, 0.02, 16, 128),
+    new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true })
+);
+scene.add(ring2);
+
+// Wireframe Face
+const face = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true })
+);
+face.position.set(2, 0, 0);
+scene.add(face);
+
+// Text: BISWAJIT RO
+const loader = new THREE.FontLoader();
+loader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.json", font => {
+    const text = new THREE.Mesh(
+        new THREE.TextGeometry("BISWAJIT RO", { size: 0.3, height: 0.02, font }),
+        new THREE.MeshBasicMaterial({ color: 0x00ffff })
+    );
+    text.position.set(-1.2, -1.5, 0);
+    scene.add(text);
+});
+
+// ✋ HAND GESTURE VARIABLES
+let rotX = 0, rotY = 0;
+let zoom = 6;
+
+// Mediapipe Hands
+const hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+hands.setOptions({ maxNumHands: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+
+// Map hand to rotation & zoom
+hands.onResults(res => {
+    if (!res.multiHandLandmarks) return;
+
+    const finger = res.multiHandLandmarks[0][8]; // index finger tip
+    const thumb = res.multiHandLandmarks[0][4]; // thumb tip
+
+    // Smooth rotation mapping
+    const targetRotX = (finger.y - 0.5) * 5;
+    const targetRotY = (finger.x - 0.5) * 5;
+    rotX += (targetRotX - rotX) * 0.2;
+    rotY += (targetRotY - rotY) * 0.2;
+
+    // Pinch for zoom
+    const dx = finger.x - thumb.x;
+    const dy = finger.y - thumb.y;
+    const distance = Math.sqrt(dx*dx + dy*dy);
+    zoom = 6 - (distance - 0.05) * 10;
+    if (zoom < 3) zoom = 3;
+    if (zoom > 10) zoom = 10;
+});
+
+// Connect camera to Mediapipe
+const camFeed = new Camera(video, {
+    onFrame: async () => await hands.send({ image: video }),
+    width: 640,
+    height: 480
+});
+camFeed.start();
+
+// ANIMATE LOOP
+(function animate() {
+    earth.rotation.y += 0.01 + rotY*0.02;
+    earth.rotation.x += rotX*0.02;
+
+    ring1.rotation.z += 0.01;
+    ring2.rotation.z -= 0.01;
+
+    camera.position.z = zoom;
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+})();
+
+// Resize
+window.addEventListener('resize', () => {
+    renderer.setSize(innerWidth, innerHeight);
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+});
+</script>
+
+</body>
+</html>
