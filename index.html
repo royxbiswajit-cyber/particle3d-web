@@ -222,7 +222,7 @@
             });
             
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Reduced for performance
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
             renderer.setClearColor(0x000000);
             renderer.outputEncoding = THREE.sRGBEncoding;
             
@@ -281,7 +281,7 @@
             clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
             earthGroup.add(clouds);
             
-            // Atmosphere effect (shader removed for performance)
+            // Atmosphere effect
             const atmosphereGeometry = new THREE.SphereGeometry(CONFIG.EARTH_RADIUS * 1.08, 32, 32);
             const atmosphereMaterial = new THREE.MeshBasicMaterial({
                 color: 0x0099ff,
@@ -303,7 +303,6 @@
             const positions = new Float32Array(starCount * 3);
             
             for (let i = 0; i < starCount * 3; i += 3) {
-                // Spherical distribution
                 const radius = 100;
                 const theta = Math.random() * Math.PI * 2;
                 const phi = Math.acos(2 * Math.random() - 1);
@@ -328,13 +327,11 @@
 
         // ========== SETUP EFFICIENT LIGHTING ==========
         function setupEfficientLighting() {
-            // Single directional light
             const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
             sunLight.position.set(50, 30, 50);
             sunLight.castShadow = CONFIG.ENABLE_SHADOWS;
             scene.add(sunLight);
             
-            // Ambient light only
             const ambient = new THREE.AmbientLight(0x224466, 0.3);
             scene.add(ambient);
         }
@@ -346,11 +343,10 @@
             document.body.appendChild(video);
             
             try {
-                // Optimized camera settings
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: "user",
-                        width: { ideal: 480 }, // Reduced resolution
+                        width: { ideal: 480 },
                         height: { ideal: 360 },
                         frameRate: { ideal: 30 }
                     },
@@ -360,9 +356,7 @@
                 video.srcObject = stream;
                 await video.play();
                 
-                // Start optimized hand tracking
                 startOptimizedTracking();
-                
                 updateConnectionStatus("TRACKING");
                 return true;
             } catch (error) {
@@ -379,10 +373,9 @@
                 locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
             });
             
-            // Optimized settings
             hands.setOptions({
                 maxNumHands: 1,
-                modelComplexity: 0, // Reduced complexity for speed
+                modelComplexity: 0,
                 minDetectionConfidence: 0.6,
                 minTrackingConfidence: 0.6,
                 selfieMode: true
@@ -398,9 +391,7 @@
                     if (isTracking) {
                         try {
                             await hands.send({image: video});
-                        } catch (e) {
-                            // Skip frame on error
-                        }
+                        } catch (e) {}
                     }
                 },
                 width: 480,
@@ -421,7 +412,6 @@
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const landmarks = results.multiHandLandmarks[0];
                 
-                // Calculate palm center (optimized)
                 let sumX = 0, sumY = 0;
                 for (let i = 0; i < 5; i++) {
                     sumX += landmarks[i*4].x;
@@ -431,15 +421,12 @@
                 const newX = sumX / 5;
                 const newY = sumY / 5;
                 
-                // Calculate velocity
                 hand.velocity.x = newX - hand.position.x;
                 hand.velocity.y = newY - hand.position.y;
                 
-                // Update position
                 hand.position.x = newX;
                 hand.position.y = newY;
                 
-                // Smooth position with velocity prediction
                 const smoothFactor = CONFIG.HAND_SMOOTHING;
                 const velFactor = CONFIG.VELOCITY_SMOOTHING;
                 
@@ -448,7 +435,6 @@
                 hand.smoothedVel.x += (hand.velocity.x - hand.smoothedVel.x) * smoothFactor;
                 hand.smoothedVel.y += (hand.velocity.y - hand.smoothedVel.y) * smoothFactor;
                 
-                // Detect gestures (optimized)
                 detectOptimizedGestures(landmarks);
                 
                 hand.detected = true;
@@ -469,7 +455,6 @@
             const pinky = landmarks[20];
             const wrist = landmarks[0];
             
-            // Calculate key distances
             const thumbIndexDist = Math.hypot(thumb.x - index.x, thumb.y - index.y);
             const fingersToWrist = [];
             
@@ -477,30 +462,25 @@
                 fingersToWrist.push(Math.hypot(landmarks[i].x - wrist.x, landmarks[i].y - wrist.y));
             }
             
-            // Gesture detection with confidence
             const avgFingerDist = fingersToWrist.reduce((a, b) => a + b) / fingersToWrist.length;
             
-            // Fist detection
             const fistConfidence = Math.max(0, 1 - (avgFingerDist / CONFIG.FIST_THRESHOLD));
             hand.gestures.fist = {
                 active: fistConfidence > CONFIG.GESTURE_CONFIDENCE,
                 confidence: fistConfidence
             };
             
-            // Open hand (opposite of fist)
             hand.gestures.open = {
                 active: fistConfidence < 0.3,
                 confidence: 1 - fistConfidence
             };
             
-            // Pinch detection
             const pinchConfidence = Math.max(0, 1 - (thumbIndexDist / CONFIG.PINCH_THRESHOLD));
             hand.gestures.pinch = {
                 active: pinchConfidence > CONFIG.GESTURE_CONFIDENCE,
                 confidence: pinchConfidence
             };
             
-            // Two fingers (simple detection)
             const middleRingDist = Math.hypot(middle.x - ring.x, middle.y - ring.y);
             const twoFingerConfidence = thumbIndexDist < 0.08 && middleRingDist > 0.12 ? 0.8 : 0;
             hand.gestures.twoFingers = {
@@ -511,7 +491,6 @@
 
         // ========== UPDATE EARTH CONTROL (OPTIMIZED) ==========
         function updateEarthControl(deltaTime) {
-            // Auto-rotation when no hand
             if (!hand.detected || hand.confidence < 0.3) {
                 earthGroup.rotation.y += CONFIG.AUTO_ROTATION;
                 hand.inertia.x *= CONFIG.INERTIA_DECAY;
@@ -519,35 +498,27 @@
                 return;
             }
             
-            // Calculate control input from hand
             const moveX = (hand.smoothed.x - 0.5) * 2;
             const moveY = (hand.smoothed.y - 0.5) * 2;
             
-            // Apply deadzone
             const deadzone = CONFIG.DEADZONE;
             const inputX = Math.abs(moveX) > deadzone ? moveX : 0;
             const inputY = Math.abs(moveY) > deadzone ? moveY : 0;
             
-            // ROTATION CONTROL
             if (hand.gestures.open.active && hand.gestures.open.confidence > 0.7) {
                 const rotationSpeed = CONFIG.ROTATION_SENSITIVITY * deltaTime;
                 hand.inertia.x += inputY * rotationSpeed;
                 hand.inertia.y += -inputX * rotationSpeed;
             }
             
-            // ZOOM CONTROL
             if (hand.gestures.fist.active && hand.gestures.fist.confidence > 0.7) {
-                // Zoom out with fist
                 hand.inertia.z -= CONFIG.ZOOM_SENSITIVITY;
             } else if (hand.gestures.pinch.active && hand.gestures.pinch.confidence > 0.7) {
-                // Zoom in with pinch
                 hand.inertia.z += CONFIG.ZOOM_SENSITIVITY;
             }
             
-            // TWO FINGER ACTION (reset)
             if (hand.gestures.twoFingers.active && hand.gestures.twoFingers.confidence > 0.7) {
                 if (!hand.lastTwoFingers) {
-                    // Reset view
                     cameraTarget.distance = CONFIG.CAMERA_DISTANCE;
                     cameraTarget.rotation.x = 0;
                     cameraTarget.rotation.y = 0;
@@ -560,29 +531,23 @@
                 hand.lastTwoFingers = false;
             }
             
-            // Apply inertia with decay
             hand.inertia.x *= CONFIG.INERTIA_DECAY;
             hand.inertia.y *= CONFIG.INERTIA_DECAY;
             hand.inertia.z *= CONFIG.INERTIA_DECAY;
             
-            // Apply rotation to Earth
             earthGroup.rotation.x += hand.inertia.x;
             earthGroup.rotation.y += hand.inertia.y;
             
-            // Apply zoom to camera
             cameraTarget.distance += hand.inertia.z;
             cameraTarget.distance = Math.max(CONFIG.CAMERA_MIN, Math.min(CONFIG.CAMERA_MAX, cameraTarget.distance));
             
-            // Smooth camera movement
             camera.position.z += (cameraTarget.distance - camera.position.z) * CONFIG.CAMERA_SMOOTH;
             
-            // Rotate clouds
             clouds.rotation.y += deltaTime * 0.0005;
         }
 
         // ========== DEMO MODE ==========
         function startDemoMode() {
-            // Auto-rotation for demo
             setInterval(() => {
                 if (!hand.detected) {
                     earthGroup.rotation.y += CONFIG.AUTO_ROTATION * 2;
@@ -599,7 +564,6 @@
                 const fps = Math.round((frameCount * 1000) / (now - lastFPSUpdate));
                 document.getElementById('fpsCounter').textContent = fps;
                 
-                // Update stability
                 SYSTEM.performance.fpsHistory.push(fps);
                 if (SYSTEM.performance.fpsHistory.length > 30) {
                     SYSTEM.performance.fpsHistory.shift();
@@ -619,7 +583,6 @@
             if (element) {
                 element.textContent = status;
                 
-                // Visual feedback
                 const dot = document.querySelector('.connection-dot');
                 if (status === "TRACKING") {
                     dot.style.background = "#00ff88";
@@ -639,16 +602,10 @@
             const deltaTime = Math.min((currentTime - lastTime) / 1000, 0.1);
             lastTime = currentTime;
             
-            // Update Earth control
             updateEarthControl(deltaTime);
-            
-            // Update performance
             updatePerformance(currentTime);
             
-            // Camera look at Earth
             camera.lookAt(0, 0, 0);
-            
-            // Render
             renderer.render(scene, camera);
         }
 
@@ -663,19 +620,14 @@
         async function init() {
             console.log("🚀 Initializing Optimized Earth Control System v4.0");
             
-            // Initialize Three.js
             initThreeJS();
             
-            // Initialize Camera (non-blocking)
             setTimeout(() => initCamera(), 100);
             
-            // Start animation
             animate(0);
             
-            // Add optimized event listeners
             window.addEventListener('resize', onResize, { passive: true });
             
-            // Performance monitoring
             setInterval(() => {
                 if (SYSTEM.performance.stability < 80) {
                     console.warn("Performance warning: ", SYSTEM.performance.stability.toFixed(1) + "%");
