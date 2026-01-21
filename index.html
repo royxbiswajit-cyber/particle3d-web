@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BR Earth System</title>
+    <title>BR Earth Control</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             overflow: hidden; 
-            background: #0a0a1a;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000000;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         canvas { 
             display: block; 
             position: fixed;
             top: 0;
             left: 0;
+            z-index: 1;
         }
         
-        /* Branding */
+        /* Professional Branding */
         .brand {
             position: absolute;
             top: 30px;
@@ -26,120 +27,151 @@
             z-index: 100;
             color: rgba(255, 255, 255, 0.95);
             pointer-events: none;
+            user-select: none;
         }
         
         .brand-name {
-            font-size: 24px;
-            font-weight: 300;
-            letter-spacing: 1px;
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            background: linear-gradient(90deg, #00ffff, #00ffaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .brand-subtitle {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 300;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             opacity: 0.7;
             text-transform: uppercase;
-            margin-top: 3px;
+            margin-top: 2px;
         }
         
         /* Hand Status */
-        .hand-status {
+        .status {
             position: absolute;
             top: 30px;
             right: 30px;
             z-index: 100;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 20px;
-            border-radius: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        
+        .status-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-        }
-        
-        .hand-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #ff4444;
-            animation: pulse 2s infinite;
-        }
-        
-        .hand-indicator.active {
-            background: #00ff88;
-            box-shadow: 0 0 15px #00ff88;
-        }
-        
-        .hand-text {
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 8px 16px;
             color: rgba(255, 255, 255, 0.9);
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 400;
         }
         
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4444;
         }
         
-        /* Loading Screen */
-        .loading {
+        .status-dot.active {
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff88;
+        }
+        
+        /* Loading Overlay */
+        .loader {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: #0a0a1a;
+            background: #000000;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            transition: opacity 0.5s;
+            transition: opacity 0.5s ease-out;
         }
         
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(0, 255, 255, 0.3);
-            border-top-color: #00ffff;
+        .loader-content {
+            text-align: center;
+        }
+        
+        .loader-spinner {
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid #00ffff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin-bottom: 20px;
         }
         
-        .loading-text {
+        .loader-text {
             color: rgba(255, 255, 255, 0.8);
-            font-size: 14px;
-            margin-top: 10px;
+            font-size: 13px;
+            font-weight: 300;
+            letter-spacing: 1px;
         }
         
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* FPS Counter */
+        .fps {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            font-family: 'Monaco', monospace;
+            z-index: 100;
         }
     </style>
 </head>
 <body>
-    <canvas id="mainCanvas"></canvas>
+    <canvas id="canvas"></canvas>
     
     <!-- Loading Screen -->
-    <div class="loading" id="loadingScreen">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">INITIALIZING SYSTEM...</div>
+    <div class="loader" id="loader">
+        <div class="loader-content">
+            <div class="loader-spinner"></div>
+            <div class="loader-text" id="loaderText">INITIALIZING SYSTEM</div>
+        </div>
     </div>
     
-    <!-- Branding -->
+    <!-- Professional Branding -->
     <div class="brand">
         <div class="brand-name">BISWAJIT ROY</div>
         <div class="brand-subtitle">EARTH CONTROL SYSTEM</div>
     </div>
     
-    <!-- Hand Status -->
-    <div class="hand-status">
-        <div class="hand-indicator" id="handIndicator"></div>
-        <div class="hand-text" id="handText">STARTING...</div>
+    <!-- Status Indicators -->
+    <div class="status">
+        <div class="status-item">
+            <div class="status-dot" id="cameraStatus"></div>
+            <span id="cameraText">CAMERA</span>
+        </div>
+        <div class="status-item">
+            <div class="status-dot" id="handStatus"></div>
+            <span id="handText">HAND</span>
+        </div>
     </div>
+    
+    <!-- FPS Counter -->
+    <div class="fps" id="fpsCounter">60 FPS</div>
 
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -148,115 +180,169 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
     <script>
-        // ========== ENHANCED EARTH CONTROL SYSTEM ==========
-        console.log("🚀 BISWAJIT ROY - Enhanced Earth Control System");
+        // ========== PROFESSIONAL EARTH CONTROL SYSTEM ==========
+        console.time('SystemBoot');
         
-        // ========== CONFIGURATION ==========
-        const CONFIG = {
-            // Earth Settings
-            EARTH_RADIUS: 5,
-            EARTH_SEGMENTS: 128,
-            CLOUD_HEIGHT: 1.01,
-            ATMOSPHERE_HEIGHT: 1.08,
-            
-            // Camera Settings
-            CAMERA_DISTANCE: 18,
-            CAMERA_MIN: 10,
-            CAMERA_MAX: 35,
-            CAMERA_SMOOTH: 0.1,
-            
-            // Hand Tracking
-            HAND_SMOOTHING: 0.2,
-            ROTATION_SENSITIVITY: 2.5,
-            ZOOM_SENSITIVITY: 0.5,
-            
-            // Colors (Nasha Style)
-            EARTH_COLOR: 0x1a5fb4,
-            CLOUD_COLOR: 0xffffff,
-            ATMOSPHERE_COLOR: 0x0099ff,
-            OCEAN_COLOR: 0x0d52bf,
-            LAND_COLOR: 0x2d5a27
+        const SYSTEM = {
+            version: "5.0",
+            author: "BISWAJIT ROY",
+            mode: "PROFESSIONAL",
+            debug: false
         };
 
-        // ========== GLOBAL STATE ==========
+        // ========== CONFIGURATION ==========
+        const CONFIG = {
+            // Performance
+            TARGET_FPS: 60,
+            MAX_DELTA_TIME: 0.1,
+            
+            // Earth
+            EARTH_RADIUS: 4.8,
+            EARTH_SEGMENTS: 128,
+            EARTH_COLOR: 0x1E90FF,
+            OCEAN_COLOR: 0x1A5FB4,
+            LAND_COLOR: 0x2E8B57,
+            
+            // Camera
+            CAMERA_DISTANCE: 18,
+            CAMERA_MIN: 12,
+            CAMERA_MAX: 35,
+            CAMERA_SMOOTH: 0.08,
+            
+            // Hand Tracking
+            HAND_SMOOTHING: 0.15,
+            VELOCITY_WEIGHT: 0.3,
+            GESTURE_CONFIDENCE: 0.8,
+            
+            // Physics
+            INERTIA_DECAY: 0.93,
+            ROTATION_SENSITIVITY: 2.0,
+            ZOOM_SENSITIVITY: 0.4,
+            
+            // Visual
+            ATMOSPHERE_INTENSITY: 0.15,
+            CLOUD_OPACITY: 0.35
+        };
+
+        // ========== STATE MANAGEMENT ==========
         let scene, camera, renderer;
         let earth, clouds, atmosphere;
         let earthGroup;
-        let loadingScreen;
         
-        // Hand State
-        let hand = {
-            detected: false,
-            position: { x: 0.5, y: 0.5 },
-            smoothed: { x: 0.5, y: 0.5 },
-            velocity: { x: 0, y: 0 },
-            lastPos: { x: 0.5, y: 0.5 },
-            gestures: {
-                open: false,
-                fist: false,
-                pinch: false
+        // Core State
+        let state = {
+            hand: {
+                detected: false,
+                confidence: 0,
+                position: { x: 0.5, y: 0.5 },
+                smoothed: { x: 0.5, y: 0.5 },
+                velocity: { x: 0, y: 0 },
+                gestures: {
+                    open: false,
+                    fist: false,
+                    pinch: false
+                },
+                inertia: { x: 0, y: 0, z: 0 }
             },
-            inertia: { x: 0, y: 0, z: 0 }
+            camera: {
+                distance: CONFIG.CAMERA_DISTANCE,
+                targetDistance: CONFIG.CAMERA_DISTANCE,
+                rotation: { x: 0, y: 0 }
+            },
+            system: {
+                isReady: false,
+                fps: 60,
+                frameCount: 0,
+                lastFPSUpdate: 0,
+                lastFrameTime: 0
+            }
         };
         
-        // Camera State
-        let cameraTarget = {
-            distance: CONFIG.CAMERA_DISTANCE,
-            rotation: { x: 0, y: 0 }
-        };
-        
-        // System State
-        let video;
-        let handResults = null;
-        let isSystemReady = false;
-        let initTime = 0;
+        // External Resources
+        let videoElement;
+        let handTracker = null;
 
-        // ========== INIT THREE.JS ==========
+        // ========== INITIALIZATION ==========
+        async function init() {
+            updateLoader("Initializing 3D Engine...");
+            
+            // Initialize Three.js first
+            initThreeJS();
+            
+            // Initialize camera and hand tracking
+            updateLoader("Starting Camera System...");
+            const cameraSuccess = await initCamera();
+            
+            if (cameraSuccess) {
+                updateStatus('camera', true, "ACTIVE");
+                updateLoader("Starting Hand Tracking...");
+                await startHandTracking();
+            } else {
+                updateStatus('camera', false, "ERROR");
+                updateLoader("Camera Failed - Using Demo Mode");
+                startDemoMode();
+            }
+            
+            // Hide loader and start animation
+            setTimeout(() => {
+                hideLoader();
+                state.system.isReady = true;
+                console.timeEnd('SystemBoot');
+                console.log(`✅ ${SYSTEM.author} - ${SYSTEM.version} READY`);
+            }, 1000);
+            
+            // Start main loop
+            requestAnimationFrame(animate);
+            
+            // Setup window resize
+            window.addEventListener('resize', onWindowResize, { passive: true });
+        }
+
+        // ========== THREE.JS INITIALIZATION ==========
         function initThreeJS() {
             // Scene
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0a0a1a);
+            scene.background = new THREE.Color(0x000000);
             
             // Camera
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = CONFIG.CAMERA_DISTANCE;
+            camera.position.set(0, 0, CONFIG.CAMERA_DISTANCE);
             
             // Renderer
-            renderer = new THREE.WebGLRenderer({ 
-                canvas: document.getElementById('mainCanvas'),
+            renderer = new THREE.WebGLRenderer({
+                canvas: document.getElementById('canvas'),
                 antialias: true,
-                alpha: true
+                alpha: false,
+                powerPreference: "high-performance"
             });
             
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.setClearColor(0x0a0a1a);
+            renderer.setClearColor(0x000000);
+            renderer.outputEncoding = THREE.sRGBEncoding;
             
-            // Create Enhanced Earth
-            createEnhancedEarth();
+            // Create Earth system
+            createEarthSystem();
             
-            // Create Starfield
-            createStarfield();
+            // Create stars
+            createStarField();
             
-            // Setup Lighting
+            // Setup lighting
             setupLighting();
-            
-            updateLoadingStatus("Creating Earth...");
         }
 
-        // ========== CREATE ENHANCED EARTH ==========
-        function createEnhancedEarth() {
+        // ========== CREATE EARTH SYSTEM ==========
+        function createEarthSystem() {
             earthGroup = new THREE.Group();
             scene.add(earthGroup);
             
-            // Earth Sphere with detailed geometry
+            // Main Earth sphere
             const earthGeometry = new THREE.SphereGeometry(
                 CONFIG.EARTH_RADIUS,
                 CONFIG.EARTH_SEGMENTS,
                 CONFIG.EARTH_SEGMENTS
             );
             
-            // Create custom Earth material with multiple colors
             const earthMaterial = new THREE.MeshPhongMaterial({
                 color: CONFIG.EARTH_COLOR,
                 specular: 0x222222,
@@ -265,60 +351,30 @@
             });
             
             earth = new THREE.Mesh(earthGeometry, earthMaterial);
-            
-            // Create detailed land and ocean patterns
-            createLandAndOcean();
-            
             earthGroup.add(earth);
             
-            // Clouds Layer
-            const cloudGeometry = new THREE.SphereGeometry(
-                CONFIG.EARTH_RADIUS * CONFIG.CLOUD_HEIGHT,
-                96, 96
-            );
+            // Create continents (using noise)
+            createContinents();
             
+            // Clouds layer
+            const cloudGeometry = new THREE.SphereGeometry(CONFIG.EARTH_RADIUS * 1.01, 96, 96);
             const cloudMaterial = new THREE.MeshPhongMaterial({
-                color: CONFIG.CLOUD_COLOR,
+                color: 0xffffff,
                 transparent: true,
-                opacity: 0.4,
+                opacity: CONFIG.CLOUD_OPACITY,
                 depthWrite: false
             });
             
             clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
             earthGroup.add(clouds);
             
-            // Atmosphere Glow
-            const atmosphereGeometry = new THREE.SphereGeometry(
-                CONFIG.EARTH_RADIUS * CONFIG.ATMOSPHERE_HEIGHT,
-                64, 64
-            );
-            
-            const atmosphereMaterial = new THREE.ShaderMaterial({
-                uniforms: {
-                    glowColor: { value: new THREE.Color(CONFIG.ATMOSPHERE_COLOR) }
-                },
-                vertexShader: `
-                    varying vec3 vNormal;
-                    varying vec3 vPosition;
-                    void main() {
-                        vNormal = normalize(normalMatrix * normal);
-                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                        vPosition = mvPosition.xyz;
-                        gl_Position = projectionMatrix * mvPosition;
-                    }
-                `,
-                fragmentShader: `
-                    uniform vec3 glowColor;
-                    varying vec3 vNormal;
-                    varying vec3 vPosition;
-                    void main() {
-                        float intensity = pow(0.8 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
-                        gl_FragColor = vec4(glowColor, intensity * 0.25);
-                    }
-                `,
-                side: THREE.BackSide,
-                blending: THREE.AdditiveBlending,
-                transparent: true
+            // Atmosphere
+            const atmosphereGeometry = new THREE.SphereGeometry(CONFIG.EARTH_RADIUS * 1.05, 64, 64);
+            const atmosphereMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00aaff,
+                transparent: true,
+                opacity: CONFIG.ATMOSPHERE_INTENSITY,
+                side: THREE.BackSide
             });
             
             atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
@@ -326,38 +382,36 @@
             
             // Initial rotation
             earthGroup.rotation.x = -0.3;
-            earthGroup.rotation.y = 2.5;
         }
 
-        // ========== CREATE LAND AND OCEAN PATTERNS ==========
-        function createLandAndOcean() {
-            // Add custom geometry for land masses using multiple spheres
-            const landGeometry = new THREE.IcosahedronGeometry(CONFIG.EARTH_RADIUS * 0.99, 2);
-            const landMaterial = new THREE.MeshPhongMaterial({
+        // ========== CREATE CONTINENTS ==========
+        function createContinents() {
+            const continentGeometry = new THREE.IcosahedronGeometry(CONFIG.EARTH_RADIUS * 0.99, 3);
+            const continentMaterial = new THREE.MeshPhongMaterial({
                 color: CONFIG.LAND_COLOR,
                 transparent: true,
-                opacity: 0.7
+                opacity: 0.8
             });
             
-            // Create multiple land masses
-            const landMasses = [];
-            const positions = [
-                { x: 1.5, y: 0.5, z: 1.2, scale: 0.8 },
-                { x: -1.2, y: 0.3, z: 1.5, scale: 0.6 },
-                { x: 1.0, y: -0.8, z: -1.0, scale: 0.7 },
-                { x: -1.5, y: -0.4, z: -0.8, scale: 0.9 }
+            // Create 6 major continents
+            const continentPositions = [
+                { x: 2, y: 0.5, z: 1, scale: 0.7 },   // Asia
+                { x: -1.5, y: 0.3, z: 1.2, scale: 0.6 }, // Europe
+                { x: -1.2, y: -0.8, z: -1, scale: 0.8 }, // Africa
+                { x: 1.5, y: -0.5, z: -0.5, scale: 0.6 }, // Australia
+                { x: 0.5, y: 0.2, z: -1.8, scale: 0.9 }, // Americas
+                { x: -0.5, y: 1.5, z: 0.5, scale: 0.5 }   // Arctic
             ];
             
-            positions.forEach(pos => {
-                const land = new THREE.Mesh(landGeometry, landMaterial);
-                land.position.set(pos.x, pos.y, pos.z);
-                land.scale.setScalar(pos.scale);
-                earth.add(land);
-                landMasses.push(land);
+            continentPositions.forEach(pos => {
+                const continent = new THREE.Mesh(continentGeometry, continentMaterial);
+                continent.position.set(pos.x, pos.y, pos.z);
+                continent.scale.setScalar(pos.scale);
+                earth.add(continent);
             });
             
             // Ocean surface
-            const oceanGeometry = new THREE.SphereGeometry(CONFIG.EARTH_RADIUS * 0.995, 64, 64);
+            const oceanGeometry = new THREE.SphereGeometry(CONFIG.EARTH_RADIUS * 0.995, 96, 96);
             const oceanMaterial = new THREE.MeshPhongMaterial({
                 color: CONFIG.OCEAN_COLOR,
                 transparent: true,
@@ -369,14 +423,12 @@
             earth.add(ocean);
         }
 
-        // ========== CREATE STARFIELD ==========
-        function createStarfield() {
+        // ========== CREATE STAR FIELD ==========
+        function createStarField() {
             const starCount = 2000;
             const positions = new Float32Array(starCount * 3);
-            const colors = new Float32Array(starCount * 3);
             
             for (let i = 0; i < starCount * 3; i += 3) {
-                // Random position in sphere
                 const radius = 100 + Math.random() * 400;
                 const theta = Math.random() * Math.PI * 2;
                 const phi = Math.acos(2 * Math.random() - 1);
@@ -384,24 +436,15 @@
                 positions[i] = radius * Math.sin(phi) * Math.cos(theta);
                 positions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
                 positions[i + 2] = radius * Math.cos(phi);
-                
-                // Random star colors
-                const hue = Math.random();
-                const color = new THREE.Color().setHSL(hue, 0.5, 0.7);
-                colors[i] = color.r;
-                colors[i + 1] = color.g;
-                colors[i + 2] = color.b;
             }
             
             const geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
             
             const material = new THREE.PointsMaterial({
-                size: 0.8,
-                vertexColors: true,
-                sizeAttenuation: true,
-                transparent: true
+                size: 0.5,
+                color: 0xffffff,
+                sizeAttenuation: true
             });
             
             const stars = new THREE.Points(geometry, material);
@@ -411,100 +454,87 @@
         // ========== SETUP LIGHTING ==========
         function setupLighting() {
             // Sun light
-            const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
             sunLight.position.set(50, 30, 50);
-            sunLight.castShadow = true;
             scene.add(sunLight);
             
             // Ambient light
             const ambientLight = new THREE.AmbientLight(0x224466, 0.3);
             scene.add(ambientLight);
             
-            // Earth glow light
-            const earthLight = new THREE.PointLight(CONFIG.ATMOSPHERE_COLOR, 0.5, 50);
-            earthLight.position.set(0, 0, 0);
-            scene.add(earthLight);
+            // Earth glow
+            const pointLight = new THREE.PointLight(0x00aaff, 0.3, 100);
+            pointLight.position.set(0, 0, 0);
+            scene.add(pointLight);
         }
 
-        // ========== INITIALIZE CAMERA AND HAND TRACKING ==========
+        // ========== CAMERA INITIALIZATION ==========
         async function initCamera() {
-            updateLoadingStatus("Starting camera...");
-            
             try {
-                video = document.createElement('video');
-                video.style.display = 'none';
-                document.body.appendChild(video);
+                videoElement = document.createElement('video');
+                videoElement.style.display = 'none';
+                document.body.appendChild(videoElement);
                 
-                // Try multiple camera configurations
                 const constraints = {
                     video: {
                         facingMode: "user",
-                        width: { ideal: 640, min: 320 },
-                        height: { ideal: 480, min: 240 },
-                        frameRate: { ideal: 30, min: 15 }
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        frameRate: { ideal: 30 }
                     },
                     audio: false
                 };
                 
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
+                videoElement.srcObject = stream;
                 
                 return new Promise((resolve) => {
-                    video.onloadedmetadata = async () => {
-                        await video.play();
-                        updateLoadingStatus("Starting hand tracking...");
-                        await startHandTracking();
-                        resolve(true);
+                    videoElement.onloadedmetadata = () => {
+                        videoElement.play().then(() => resolve(true));
                     };
                 });
-                
             } catch (error) {
-                console.error("Camera error:", error);
-                updateHandStatus(false, "CAMERA ERROR");
+                console.warn("Camera initialization failed:", error);
                 return false;
             }
         }
 
-        // ========== START HAND TRACKING ==========
+        // ========== HAND TRACKING ==========
         async function startHandTracking() {
-            const hands = new Hands({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-            });
-            
-            hands.setOptions({
-                maxNumHands: 1,
-                modelComplexity: 1,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
-            });
-            
-            hands.onResults((results) => {
-                processHandResults(results);
-            });
-            
             try {
-                const camera = new Camera(video, {
-                    onFrame: async () => {
-                        try {
-                            await hands.send({image: video});
-                        } catch (e) {
-                            console.warn("Frame processing skipped");
-                        }
-                    },
-                    width: video.videoWidth || 640,
-                    height: video.videoHeight || 480
+                const hands = new Hands({
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
                 });
                 
-                await camera.start();
-                updateLoadingStatus("System ready!");
-                setTimeout(() => {
-                    hideLoadingScreen();
-                }, 1000);
+                hands.setOptions({
+                    maxNumHands: 1,
+                    modelComplexity: 1,
+                    minDetectionConfidence: 0.6,
+                    minTrackingConfidence: 0.6
+                });
                 
+                hands.onResults((results) => {
+                    processHandResults(results);
+                });
+                
+                handTracker = new Camera(videoElement, {
+                    onFrame: async () => {
+                        try {
+                            await hands.send({image: videoElement});
+                        } catch (e) {
+                            if (SYSTEM.debug) console.warn("Tracking frame skipped");
+                        }
+                    },
+                    width: 640,
+                    height: 480
+                });
+                
+                await handTracker.start();
+                updateStatus('hand', true, "TRACKING");
                 return true;
             } catch (error) {
-                console.error("Hand tracking error:", error);
-                updateHandStatus(false, "TRACKING ERROR");
+                console.error("Hand tracking failed:", error);
+                updateStatus('hand', false, "ERROR");
                 return false;
             }
         }
@@ -516,155 +546,200 @@
                 
                 // Calculate palm center
                 let sumX = 0, sumY = 0;
-                for (let i = 0; i < landmarks.length; i++) {
-                    sumX += landmarks[i].x;
-                    sumY += landmarks[i].y;
-                }
+                const palmPoints = [0, 1, 5, 9, 13, 17];
                 
-                const newX = sumX / landmarks.length;
-                const newY = sumY / landmarks.length;
+                palmPoints.forEach(idx => {
+                    sumX += landmarks[idx].x;
+                    sumY += landmarks[idx].y;
+                });
                 
-                // Calculate velocity
-                hand.velocity.x = newX - hand.position.x;
-                hand.velocity.y = newY - hand.position.y;
+                const newX = sumX / palmPoints.length;
+                const newY = sumY / palmPoints.length;
                 
-                // Update position
-                hand.position.x = newX;
-                hand.position.y = newY;
+                // Update position and velocity
+                state.hand.velocity.x = newX - state.hand.position.x;
+                state.hand.velocity.y = newY - state.hand.position.y;
                 
-                // Smooth position
-                hand.smoothed.x += (hand.position.x - hand.smoothed.x) * CONFIG.HAND_SMOOTHING;
-                hand.smoothed.y += (hand.position.y - hand.smoothed.y) * CONFIG.HAND_SMOOTHING;
+                state.hand.position.x = newX;
+                state.hand.position.y = newY;
+                
+                // Smooth position with velocity prediction
+                const smoothing = CONFIG.HAND_SMOOTHING;
+                state.hand.smoothed.x += (state.hand.position.x + state.hand.velocity.x * CONFIG.VELOCITY_WEIGHT - state.hand.smoothed.x) * smoothing;
+                state.hand.smoothed.y += (state.hand.position.y + state.hand.velocity.y * CONFIG.VELOCITY_WEIGHT - state.hand.smoothed.y) * smoothing;
                 
                 // Detect gestures
-                detectHandGestures(landmarks);
+                detectGestures(landmarks);
                 
-                hand.detected = true;
-                updateHandStatus(true, "HAND DETECTED");
-                
+                state.hand.detected = true;
+                state.hand.confidence = Math.min(1, state.hand.confidence + 0.1);
+                updateStatus('hand', true, "DETECTED");
             } else {
-                hand.detected = false;
-                updateHandStatus(false, "NO HAND");
+                state.hand.detected = false;
+                state.hand.confidence = Math.max(0, state.hand.confidence - 0.05);
+                updateStatus('hand', false, "NO HAND");
             }
         }
 
-        // ========== DETECT HAND GESTURES ==========
-        function detectHandGestures(landmarks) {
-            const thumbTip = landmarks[4];
-            const indexTip = landmarks[8];
-            const middleTip = landmarks[12];
-            const ringTip = landmarks[16];
-            const pinkyTip = landmarks[20];
+        // ========== DETECT GESTURES ==========
+        function detectGestures(landmarks) {
+            const thumb = landmarks[4];
+            const index = landmarks[8];
+            const middle = landmarks[12];
+            const ring = landmarks[16];
+            const pinky = landmarks[20];
             const wrist = landmarks[0];
             
             // Calculate distances
-            const thumbIndexDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
+            const thumbIndexDist = Math.hypot(thumb.x - index.x, thumb.y - index.y);
             
-            // Check if fingers are closed (fist)
-            let fingersClosed = true;
+            // Check fist (all fingers close to wrist)
+            let fingersClose = true;
             for (let i = 8; i <= 20; i += 4) {
                 const dist = Math.hypot(landmarks[i].x - wrist.x, landmarks[i].y - wrist.y);
-                if (dist > 0.2) {
-                    fingersClosed = false;
+                if (dist > 0.18) {
+                    fingersClose = false;
                     break;
                 }
             }
             
-            hand.gestures.fist = fingersClosed;
-            hand.gestures.open = !fingersClosed && thumbIndexDist > 0.1;
-            hand.gestures.pinch = thumbIndexDist < 0.05;
+            state.hand.gestures.fist = fingersClose;
+            state.hand.gestures.open = !fingersClose && thumbIndexDist > 0.12;
+            state.hand.gestures.pinch = thumbIndexDist < 0.06;
         }
 
         // ========== UPDATE EARTH CONTROL ==========
         function updateEarthControl(deltaTime) {
-            // Auto-rotate when no hand
-            if (!hand.detected) {
+            // Auto-rotation when no hand
+            if (!state.hand.detected || state.hand.confidence < 0.3) {
                 earthGroup.rotation.y += 0.001;
-                hand.inertia.x *= 0.95;
-                hand.inertia.y *= 0.95;
+                state.hand.inertia.x *= CONFIG.INERTIA_DECAY;
+                state.hand.inertia.y *= CONFIG.INERTIA_DECAY;
                 return;
             }
             
-            // Calculate hand movement
-            const moveX = (hand.smoothed.x - 0.5) * 2;
-            const moveY = (hand.smoothed.y - 0.5) * 2;
+            // Calculate normalized hand movement
+            const moveX = (state.hand.smoothed.x - 0.5) * 2;
+            const moveY = (state.hand.smoothed.y - 0.5) * 2;
             
-            // Apply rotation based on hand movement
-            if (hand.gestures.open) {
-                hand.inertia.x += moveY * CONFIG.ROTATION_SENSITIVITY * deltaTime;
-                hand.inertia.y += -moveX * CONFIG.ROTATION_SENSITIVITY * deltaTime;
+            // Apply deadzone
+            const deadzone = 0.05;
+            const inputX = Math.abs(moveX) > deadzone ? moveX : 0;
+            const inputY = Math.abs(moveY) > deadzone ? moveY : 0;
+            
+            // ROTATION CONTROL
+            if (state.hand.gestures.open) {
+                state.hand.inertia.x += inputY * CONFIG.ROTATION_SENSITIVITY * deltaTime;
+                state.hand.inertia.y += -inputX * CONFIG.ROTATION_SENSITIVITY * deltaTime;
             }
             
-            // Apply zoom based on gestures
-            if (hand.gestures.fist) {
-                hand.inertia.z -= CONFIG.ZOOM_SENSITIVITY * deltaTime;
-            } else if (hand.gestures.pinch) {
-                hand.inertia.z += CONFIG.ZOOM_SENSITIVITY * deltaTime;
+            // ZOOM CONTROL
+            if (state.hand.gestures.fist) {
+                state.hand.inertia.z -= CONFIG.ZOOM_SENSITIVITY * deltaTime;
+            } else if (state.hand.gestures.pinch) {
+                state.hand.inertia.z += CONFIG.ZOOM_SENSITIVITY * deltaTime;
             }
             
             // Apply inertia decay
-            hand.inertia.x *= 0.92;
-            hand.inertia.y *= 0.92;
-            hand.inertia.z *= 0.95;
+            state.hand.inertia.x *= CONFIG.INERTIA_DECAY;
+            state.hand.inertia.y *= CONFIG.INERTIA_DECAY;
+            state.hand.inertia.z *= CONFIG.INERTIA_DECAY;
             
             // Apply rotation to Earth
-            earthGroup.rotation.x += hand.inertia.x;
-            earthGroup.rotation.y += hand.inertia.y;
+            earthGroup.rotation.x += state.hand.inertia.x;
+            earthGroup.rotation.y += state.hand.inertia.y;
             
             // Apply zoom to camera
-            cameraTarget.distance += hand.inertia.z;
-            cameraTarget.distance = Math.max(CONFIG.CAMERA_MIN, Math.min(CONFIG.CAMERA_MAX, cameraTarget.distance));
+            state.camera.targetDistance += state.hand.inertia.z;
+            state.camera.targetDistance = Math.max(
+                CONFIG.CAMERA_MIN,
+                Math.min(CONFIG.CAMERA_MAX, state.camera.targetDistance)
+            );
             
             // Smooth camera movement
-            camera.position.z += (cameraTarget.distance - camera.position.z) * CONFIG.CAMERA_SMOOTH;
+            state.camera.distance += (state.camera.targetDistance - state.camera.distance) * CONFIG.CAMERA_SMOOTH;
+            camera.position.z = state.camera.distance;
             
-            // Rotate clouds slightly faster
-            clouds.rotation.y += deltaTime * 0.0003;
+            // Rotate clouds (slightly different speed)
+            clouds.rotation.y += deltaTime * 0.0002;
         }
 
-        // ========== UPDATE HAND STATUS UI ==========
-        function updateHandStatus(detected, text) {
-            const indicator = document.getElementById('handIndicator');
-            const textEl = document.getElementById('handText');
+        // ========== DEMO MODE ==========
+        function startDemoMode() {
+            setInterval(() => {
+                if (!state.hand.detected) {
+                    earthGroup.rotation.y += 0.0015;
+                    camera.position.z = 18 + Math.sin(Date.now() * 0.001) * 3;
+                }
+            }, 16);
+        }
+
+        // ========== UI UPDATES ==========
+        function updateStatus(type, active, text) {
+            const dot = document.getElementById(`${type}Status`);
+            const textEl = document.getElementById(`${type}Text`);
             
-            if (detected) {
-                indicator.classList.add('active');
+            if (dot) {
+                dot.classList.toggle('active', active);
+            }
+            if (textEl) {
                 textEl.textContent = text;
-                textEl.style.color = '#00ff88';
-            } else {
-                indicator.classList.remove('active');
-                textEl.textContent = text;
-                textEl.style.color = '#ff8888';
             }
         }
 
-        // ========== UPDATE LOADING STATUS ==========
-        function updateLoadingStatus(text) {
-            const loadingText = document.querySelector('.loading-text');
-            if (loadingText) {
-                loadingText.textContent = text;
+        function updateLoader(text) {
+            const loaderText = document.getElementById('loaderText');
+            if (loaderText) {
+                loaderText.textContent = text;
             }
         }
 
-        // ========== HIDE LOADING SCREEN ==========
-        function hideLoadingScreen() {
-            const loadingScreen = document.getElementById('loadingScreen');
-            if (loadingScreen) {
-                loadingScreen.style.opacity = '0';
+        function hideLoader() {
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.style.opacity = '0';
                 setTimeout(() => {
-                    loadingScreen.style.display = 'none';
+                    loader.style.display = 'none';
                 }, 500);
             }
-            isSystemReady = true;
         }
 
-        // ========== ANIMATION LOOP ==========
-        let lastTime = 0;
+        // ========== PERFORMANCE MONITORING ==========
+        function updatePerformance(now) {
+            state.system.frameCount++;
+            
+            if (now >= state.system.lastFPSUpdate + 1000) {
+                state.system.fps = Math.round((state.system.frameCount * 1000) / (now - state.system.lastFPSUpdate));
+                
+                const fpsElement = document.getElementById('fpsCounter');
+                if (fpsElement) {
+                    fpsElement.textContent = `${state.system.fps} FPS`;
+                    
+                    // Color coding based on performance
+                    if (state.system.fps >= 55) {
+                        fpsElement.style.color = '#00ff88';
+                    } else if (state.system.fps >= 30) {
+                        fpsElement.style.color = '#ffaa00';
+                    } else {
+                        fpsElement.style.color = '#ff4444';
+                    }
+                }
+                
+                state.system.frameCount = 0;
+                state.system.lastFPSUpdate = now;
+            }
+        }
+
+        // ========== MAIN ANIMATION LOOP ==========
         function animate(currentTime) {
             requestAnimationFrame(animate);
             
-            const deltaTime = Math.min((currentTime - lastTime) / 1000, 0.1);
-            lastTime = currentTime;
+            // Calculate delta time
+            const deltaTime = Math.min(
+                (currentTime - state.system.lastFrameTime) / 1000,
+                CONFIG.MAX_DELTA_TIME
+            );
+            state.system.lastFrameTime = currentTime;
             
             // Update Earth control
             updateEarthControl(deltaTime);
@@ -672,103 +747,31 @@
             // Update camera look
             camera.lookAt(0, 0, 0);
             
-            // Update atmosphere shader
-            if (atmosphere.material.uniforms) {
-                atmosphere.material.uniforms.glowColor.value = new THREE.Color(
-                    0.2 + 0.2 * Math.sin(currentTime * 0.001),
-                    0.5 + 0.3 * Math.sin(currentTime * 0.001 + 2),
-                    0.8 + 0.2 * Math.sin(currentTime * 0.001 + 4)
-                );
+            // Update atmosphere color
+            if (atmosphere.material) {
+                const time = currentTime * 0.001;
+                atmosphere.material.opacity = CONFIG.ATMOSPHERE_INTENSITY + Math.sin(time) * 0.05;
             }
+            
+            // Update performance
+            updatePerformance(currentTime);
             
             // Render
             renderer.render(scene, camera);
         }
 
-        // ========== WINDOW RESIZE ==========
-        function onResize() {
+        // ========== WINDOW RESIZE HANDLER ==========
+        function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // ========== INITIALIZE SYSTEM ==========
-        async function init() {
-            console.log("🚀 Initializing Enhanced Earth Control System");
-            
-            // Get loading screen
-            loadingScreen = document.getElementById('loadingScreen');
-            
-            // Initialize Three.js
-            initThreeJS();
-            
-            // Initialize Camera and Hand Tracking
-            const cameraSuccess = await initCamera();
-            
-            if (cameraSuccess) {
-                updateLoadingStatus("System ready!");
-                setTimeout(hideLoadingScreen, 1000);
-            } else {
-                updateLoadingStatus("Using demo mode");
-                setTimeout(hideLoadingScreen, 2000);
-            }
-            
-            // Start animation
-            animate(0);
-            
-            // Add event listeners
-            window.addEventListener('resize', onResize);
-            
-            // Add mouse fallback for testing
-            setupMouseFallback();
-        }
-
-        // ========== SETUP MOUSE FALLBACK ==========
-        function setupMouseFallback() {
-            let mouseDown = false;
-            let lastMouseX = 0;
-            let lastMouseY = 0;
-            
-            document.addEventListener('mousedown', (e) => {
-                mouseDown = true;
-                lastMouseX = e.clientX;
-                lastMouseY = e.clientY;
-            });
-            
-            document.addEventListener('mouseup', () => {
-                mouseDown = false;
-            });
-            
-            document.addEventListener('mousemove', (e) => {
-                if (!mouseDown) return;
-                
-                const deltaX = e.clientX - lastMouseX;
-                const deltaY = e.clientY - lastMouseY;
-                
-                hand.inertia.x += deltaY * 0.01;
-                hand.inertia.y += -deltaX * 0.01;
-                
-                lastMouseX = e.clientX;
-                lastMouseY = e.clientY;
-                
-                // Simulate hand detected
-                if (!hand.detected) {
-                    hand.detected = true;
-                    updateHandStatus(true, "MOUSE CONTROL");
-                }
-            });
-            
-            document.addEventListener('wheel', (e) => {
-                hand.inertia.z += e.deltaY * 0.001;
-                if (!hand.detected) {
-                    hand.detected = true;
-                    updateHandStatus(true, "MOUSE CONTROL");
-                }
-            });
-        }
-
-        // ========== START EVERYTHING ==========
-        window.addEventListener('load', init);
+        // ========== INITIALIZE ON LOAD ==========
+        window.addEventListener('load', () => {
+            console.log(`🚀 ${SYSTEM.author} - ${SYSTEM.version} Loading...`);
+            init();
+        });
     </script>
 </body>
 </html>
