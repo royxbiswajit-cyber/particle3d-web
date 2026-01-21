@@ -5,12 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hand Particle Control</title>
     <style>
-        body { margin: 0; overflow: hidden; background: black; }
+        body { margin: 0; overflow: hidden; background: #000; }
         canvas { display: block; }
+        #debug { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            color: white; 
+            font-family: monospace; 
+            font-size: 12px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <canvas id="canvas"></canvas>
+    <div id="debug"></div>
 
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -20,61 +32,107 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
     <script>
-        // ========== VARIABLES ==========
+        // ========== CONFIG ==========
+        const CONFIG = {
+            PARTICLE_COUNT: 15000,
+            PARTICLE_SIZE: 0.015,
+            ATTRACTION_FORCE: 0.08,
+            REPULSION_FORCE: 0.12,
+            SWIRL_FORCE: 0.04,
+            VELOCITY_INFLUENCE: 0.3,
+            SMOOTHING: 0.15,
+            FRICTION: 0.92,
+            NOISE_AMOUNT: 0.01
+        };
+
+        // ========== STATE ==========
         let scene, camera, renderer;
         let particles = [];
         let particleSystem;
-        let handDetected = false;
-        let handX = 0.5, handY = 0.5;
-        let smoothHandX = 0.5, smoothHandY = 0.5;
+        let hand = {
+            detected: false,
+            position: { x: 0.5, y: 0.5 },
+            smooth: { x: 0.5, y: 0.5 },
+            velocity: { x: 0, y: 0 },
+            lastPos: { x: 0.5, y: 0.5 },
+            fingers: [],
+            palm: null
+        };
         let video;
         let handResults = null;
+        let debugDiv;
 
         // ========== THREE.JS INIT ==========
         function initThreeJS() {
             // Scene
             scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x000000, 0.015);
             
             // Camera
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 20;
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 25);
+            camera.lookAt(0, 0, 0);
             
             // Renderer
-            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('canvas'), 
+                antialias: true,
+                powerPreference: "high-performance" 
+            });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.setClearColor(0x000000);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             
             // Create particles
             createParticles();
             
-            // Add lights
-            const light = new THREE.PointLight(0xffffff, 1, 100);
-            light.position.set(0, 0, 30);
-            scene.add(light);
-            
-            const ambient = new THREE.AmbientLight(0x404040);
+            // Advanced lighting
+            const ambient = new THREE.AmbientLight(0xffffff, 0.2);
             scene.add(ambient);
+            
+            const pointLight = new THREE.PointLight(0xffffff, 0.8, 100);
+            pointLight.position.set(10, 10, 10);
+            scene.add(pointLight);
+            
+            const pointLight2 = new THREE.PointLight(0x00ffff, 0.6, 50);
+            pointLight2.position.set(-10, -10, 10);
+            scene.add(pointLight2);
         }
 
         // ========== CREATE PARTICLES ==========
         function createParticles() {
-            const count = 10000;
             const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(count * 3);
-            const colors = new Float32Array(count * 3);
+            const positions = new Float32Array(CONFIG.PARTICLE_COUNT * 3);
+            const colors = new Float32Array(CONFIG.PARTICLE_COUNT * 3);
+            const sizes = new Float32Array(CONFIG.PARTICLE_COUNT);
             
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < CONFIG.PARTICLE_COUNT; i++) {
                 const i3 = i * 3;
-                const radius = 10 + Math.random() * 5;
-                const angle = Math.random() * Math.PI * 2;
                 
-                positions[i3] = Math.cos(angle) * radius;
-                positions[i3 + 1] = (Math.random() - 0.5) * 10;
-                positions[i3 + 2] = Math.sin(angle) * radius;
+                // Create a torus/knot shape
+                const u = Math.random() * Math.PI * 2;
+                const v = Math.random() * Math.PI * 2;
+                const R = 12;
+                const r = 3;
                 
-                colors[i3] = Math.random() * 0.5 + 0.5;
-                colors[i3 + 1] = Math.random() * 0.5 + 0.5;
-                colors[i3 + 2] = Math.random() * 0.5 + 0.5;
+                positions[i3] = (R + r * Math.cos(v)) * Math.cos(u);
+                positions[i3 + 1] = r * Math.sin(v);
+                positions[i3 + 2] = (R + r * Math.cos(v)) * Math.sin(u);
+                
+                // Add some noise
+                positions[i3] += (Math.random() - 0.5) * 4;
+                positions[i3 + 1] += (Math.random() - 0.5) * 4;
+                positions[i3 + 2] += (Math.random() - 0.5) * 4;
+                
+                // Vibrant colors based on position
+                colors[i3] = 0.5 + 0.5 * Math.sin(positions[i3] * 0.1);
+                colors[i3 + 1] = 0.5 + 0.5 * Math.sin(positions[i3 + 1] * 0.1 + 2);
+                colors[i3 + 2] = 0.5 + 0.5 * Math.cos(positions[i3 + 2] * 0.1 + 4);
+                
+                // Varying sizes
+                sizes[i] = CONFIG.PARTICLE_SIZE * (0.5 + Math.random() * 1.5);
                 
                 particles.push({
                     x: positions[i3],
@@ -83,18 +141,25 @@
                     originalX: positions[i3],
                     originalY: positions[i3 + 1],
                     originalZ: positions[i3 + 2],
-                    vx: 0, vy: 0, vz: 0
+                    vx: 0, vy: 0, vz: 0,
+                    colorPhase: Math.random() * Math.PI * 2,
+                    size: sizes[i],
+                    noiseOffset: Math.random() * 1000
                 });
             }
             
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
             
             const material = new THREE.PointsMaterial({
-                size: 0.02,
+                size: CONFIG.PARTICLE_SIZE,
                 vertexColors: true,
                 transparent: true,
-                opacity: 0.8
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                sizeAttenuation: true
             });
             
             particleSystem = new THREE.Points(geometry, material);
@@ -102,45 +167,156 @@
         }
 
         // ========== UPDATE PARTICLES ==========
-        function updateParticles() {
-            if (!handDetected || !particleSystem) return;
+        function updateParticles(time) {
+            if (!hand.detected || !particleSystem) {
+                // When no hand, return to original positions
+                resetParticles();
+                return;
+            }
             
             const positions = particleSystem.geometry.attributes.position.array;
+            const colors = particleSystem.geometry.attributes.color.array;
             
             // Convert hand position to 3D space
-            const targetX = (smoothHandX - 0.5) * 30;
-            const targetY = (0.5 - smoothHandY) * 20;
+            const hand3D = {
+                x: (hand.smooth.x - 0.5) * 40,
+                y: (0.5 - hand.smooth.y) * 30,
+                z: 0
+            };
             
+            // Update each particle with multiple force influences
             for (let i = 0; i < particles.length; i++) {
                 const p = particles[i];
                 const i3 = i * 3;
                 
-                // Friction
-                p.vx *= 0.95;
-                p.vy *= 0.95;
-                p.vz *= 0.95;
+                // Apply friction
+                p.vx *= CONFIG.FRICTION;
+                p.vy *= CONFIG.FRICTION;
+                p.vz *= CONFIG.FRICTION;
                 
                 // Calculate distance to hand
-                const dx = targetX - p.x;
-                const dy = targetY - p.y;
-                const dz = 0 - p.z;
+                const dx = hand3D.x - p.x;
+                const dy = hand3D.y - p.y;
+                const dz = hand3D.z - p.z;
                 const dist = Math.sqrt(dx*dx + dy*dy + dz*dz) + 0.1;
                 
-                // Simple attraction to hand
-                p.vx += dx / dist * 0.05;
-                p.vy += dy / dist * 0.05;
-                p.vz += dz / dist * 0.05;
+                // 1. ATTRACTION to hand center
+                p.vx += dx / dist * CONFIG.ATTRACTION_FORCE;
+                p.vy += dy / dist * CONFIG.ATTRACTION_FORCE;
+                p.vz += dz / dist * CONFIG.ATTRACTION_FORCE;
+                
+                // 2. VELOCITY FOLLOWING - particles follow hand movement direction
+                if (Math.abs(hand.velocity.x) > 0.001 || Math.abs(hand.velocity.y) > 0.001) {
+                    p.vx += hand.velocity.x * 20 * CONFIG.VELOCITY_INFLUENCE;
+                    p.vy += -hand.velocity.y * 20 * CONFIG.VELOCITY_INFLUENCE;
+                }
+                
+                // 3. SWIRL/VORTEX around hand
+                if (dist < 15) {
+                    const angle = Math.atan2(dy, dx);
+                    const swirlStrength = Math.min(1, (15 - dist) / 15) * CONFIG.SWIRL_FORCE;
+                    
+                    p.vx += Math.cos(angle + Math.PI/2) * swirlStrength;
+                    p.vy += Math.sin(angle + Math.PI/2) * swirlStrength;
+                }
+                
+                // 4. PERLIN NOISE for organic movement
+                const noiseX = Math.sin(time * 0.001 + p.noiseOffset) * CONFIG.NOISE_AMOUNT;
+                const noiseY = Math.cos(time * 0.001 + p.noiseOffset * 1.3) * CONFIG.NOISE_AMOUNT;
+                const noiseZ = Math.sin(time * 0.001 + p.noiseOffset * 0.7) * CONFIG.NOISE_AMOUNT;
+                
+                p.vx += noiseX;
+                p.vy += noiseY;
+                p.vz += noiseZ;
+                
+                // 5. FINGER REPULSION (if fingers detected)
+                if (hand.fingers.length > 0) {
+                    for (const finger of hand.fingers) {
+                        const fx = (finger.x - 0.5) * 40;
+                        const fy = (0.5 - finger.y) * 30;
+                        
+                        const fdx = fx - p.x;
+                        const fdy = fy - p.y;
+                        const fdist = Math.sqrt(fdx*fdx + fdy*fdy) + 0.1;
+                        
+                        if (fdist < 5) {
+                            p.vx -= fdx / fdist * CONFIG.REPULSION_FORCE;
+                            p.vy -= fdy / fdist * CONFIG.REPULSION_FORCE;
+                        }
+                    }
+                }
+                
+                // 6. SOFT BOUNDARY
+                const boundary = 30;
+                const softBoundary = 25;
+                
+                if (Math.abs(p.x) > softBoundary) {
+                    p.vx -= Math.sign(p.x) * 0.1;
+                }
+                if (Math.abs(p.y) > softBoundary) {
+                    p.vy -= Math.sign(p.y) * 0.1;
+                }
+                if (Math.abs(p.z) > softBoundary) {
+                    p.vz -= Math.sign(p.z) * 0.1;
+                }
                 
                 // Update position
                 p.x += p.vx;
                 p.y += p.vy;
                 p.z += p.vz;
                 
-                // Boundary
-                const bound = 25;
-                if (Math.abs(p.x) > bound) p.vx *= -0.5;
-                if (Math.abs(p.y) > bound) p.vy *= -0.5;
-                if (Math.abs(p.z) > bound) p.vz *= -0.5;
+                // Keep particles in bounds (hard limit)
+                if (Math.abs(p.x) > boundary) {
+                    p.x = Math.sign(p.x) * boundary * 0.9;
+                    p.vx *= -0.3;
+                }
+                if (Math.abs(p.y) > boundary) {
+                    p.y = Math.sign(p.y) * boundary * 0.9;
+                    p.vy *= -0.3;
+                }
+                if (Math.abs(p.z) > boundary) {
+                    p.z = Math.sign(p.z) * boundary * 0.9;
+                    p.vz *= -0.3;
+                }
+                
+                // Update buffers
+                positions[i3] = p.x;
+                positions[i3 + 1] = p.y;
+                positions[i3 + 2] = p.z;
+                
+                // Dynamic colors based on velocity
+                const speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy + p.vz*p.vz);
+                colors[i3] = 0.3 + 0.7 * Math.sin(speed * 10 + p.colorPhase);
+                colors[i3 + 1] = 0.3 + 0.7 * Math.sin(speed * 10 + p.colorPhase + 2);
+                colors[i3 + 2] = 0.3 + 0.7 * Math.sin(speed * 10 + p.colorPhase + 4);
+            }
+            
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+            particleSystem.geometry.attributes.color.needsUpdate = true;
+        }
+
+        // ========== RESET PARTICLES ==========
+        function resetParticles() {
+            const positions = particleSystem.geometry.attributes.position.array;
+            
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                const i3 = i * 3;
+                
+                // Slow return to original position
+                p.vx += (p.originalX - p.x) * 0.02;
+                p.vy += (p.originalY - p.y) * 0.02;
+                p.vz += (p.originalZ - p.z) * 0.02;
+                
+                // Apply friction
+                p.vx *= 0.95;
+                p.vy *= 0.95;
+                p.vz *= 0.95;
+                
+                // Update position
+                p.x += p.vx;
+                p.y += p.vy;
+                p.z += p.vz;
                 
                 // Update buffer
                 positions[i3] = p.x;
@@ -159,7 +335,11 @@
             
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "user" },
+                    video: { 
+                        facingMode: "user",
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    },
                     audio: false
                 });
                 
@@ -183,8 +363,8 @@
             hands.setOptions({
                 maxNumHands: 1,
                 modelComplexity: 1,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
+                minDetectionConfidence: 0.6,
+                minTrackingConfidence: 0.6
             });
             
             hands.onResults((results) => {
@@ -205,32 +385,84 @@
         // ========== PROCESS HAND ==========
         function processHandResults(results) {
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                handDetected = true;
+                hand.detected = true;
+                const landmarks = results.multiHandLandmarks[0];
                 
-                // Use wrist position (landmark 0)
-                const wrist = results.multiHandLandmarks[0][0];
-                handX = wrist.x;
-                handY = wrist.y;
+                // Wrist position (landmark 0)
+                const wrist = landmarks[0];
+                hand.position.x = wrist.x;
+                hand.position.y = wrist.y;
                 
-                // Smooth the position
-                smoothHandX += (handX - smoothHandX) * 0.2;
-                smoothHandY += (handY - smoothHandY) * 0.2;
+                // Calculate velocity
+                hand.velocity.x = hand.position.x - hand.lastPos.x;
+                hand.velocity.y = hand.position.y - hand.lastPos.y;
+                hand.lastPos.x = hand.position.x;
+                hand.lastPos.y = hand.position.y;
+                
+                // Smooth position
+                hand.smooth.x += (hand.position.x - hand.smooth.x) * CONFIG.SMOOTHING;
+                hand.smooth.y += (hand.position.y - hand.smooth.y) * CONFIG.SMOOTHING;
+                
+                // Get finger tips for advanced interaction
+                hand.fingers = [
+                    landmarks[4],  // Thumb tip
+                    landmarks[8],  // Index tip
+                    landmarks[12], // Middle tip
+                    landmarks[16], // Ring tip
+                    landmarks[20]  // Pinky tip
+                ];
+                
+                // Get palm center (approximate)
+                hand.palm = landmarks[9]; // Middle finger MCP
+                
+                // Update debug info
+                if (debugDiv) {
+                    debugDiv.innerHTML = `
+                        Hand: DETECTED<br>
+                        X: ${hand.smooth.x.toFixed(3)}<br>
+                        Y: ${hand.smooth.y.toFixed(3)}<br>
+                        Vel: ${(Math.sqrt(hand.velocity.x*hand.velocity.x + hand.velocity.y*hand.velocity.y)*1000).toFixed(1)}<br>
+                        Particles: ${CONFIG.PARTICLE_COUNT}
+                    `;
+                }
             } else {
-                handDetected = false;
+                hand.detected = false;
+                hand.velocity.x = 0;
+                hand.velocity.y = 0;
+                
+                if (debugDiv) {
+                    debugDiv.innerHTML = `
+                        Hand: NOT DETECTED<br>
+                        Particles: ${CONFIG.PARTICLE_COUNT}<br>
+                        Move hand in front of camera
+                    `;
+                }
             }
         }
 
         // ========== ANIMATION LOOP ==========
-        function animate() {
+        function animate(time) {
             requestAnimationFrame(animate);
             
-            updateParticles();
+            updateParticles(time);
             
-            // Slow camera rotation
-            const time = Date.now() * 0.0003;
-            camera.position.x = Math.cos(time) * 15;
-            camera.position.z = Math.sin(time) * 15;
-            camera.lookAt(0, 0, 0);
+            // Dynamic camera movement based on hand velocity
+            if (hand.detected) {
+                const camX = Math.sin(time * 0.0005) * 5 + hand.velocity.x * 50;
+                const camZ = 25 + Math.cos(time * 0.0003) * 3;
+                
+                camera.position.x += (camX - camera.position.x) * 0.05;
+                camera.position.z += (camZ - camera.position.z) * 0.05;
+                camera.lookAt(hand.velocity.x * 10, hand.velocity.y * -10, 0);
+            } else {
+                // Default camera movement
+                const camX = Math.sin(time * 0.0003) * 10;
+                const camZ = 25 + Math.cos(time * 0.0005) * 5;
+                
+                camera.position.x += (camX - camera.position.x) * 0.03;
+                camera.position.z += (camZ - camera.position.z) * 0.03;
+                camera.lookAt(0, 0, 0);
+            }
             
             renderer.render(scene, camera);
         }
@@ -244,9 +476,10 @@
 
         // ========== INIT ==========
         async function init() {
+            debugDiv = document.getElementById('debug');
             initThreeJS();
             await initCamera();
-            animate();
+            animate(0);
             
             window.addEventListener('resize', onResize);
         }
