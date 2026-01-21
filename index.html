@@ -9,144 +9,100 @@
         body { 
             overflow: hidden; 
             background: #000;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
         }
         canvas { 
             display: block; 
             position: fixed;
             top: 0;
             left: 0;
-            z-index: 1;
         }
         
-        /* Professional Minimal Branding */
+        /* Ultra Minimal Branding */
         .brand {
             position: absolute;
-            top: 30px;
-            left: 30px;
+            top: 25px;
+            left: 25px;
             z-index: 100;
             color: rgba(255, 255, 255, 0.9);
+            pointer-events: none;
         }
         
         .brand-name {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 300;
-            letter-spacing: 1px;
-            margin-bottom: 2px;
+            letter-spacing: 0.5px;
         }
         
         .brand-subtitle {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 300;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             opacity: 0.6;
             text-transform: uppercase;
+            margin-top: 1px;
         }
         
-        /* Hand Status Indicator */
-        .hand-status {
+        /* Performance Indicator */
+        .performance {
             position: absolute;
-            top: 30px;
-            right: 30px;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-        }
-        
-        .hand-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ff4444;
-        }
-        
-        .hand-dot.active {
-            background: #00ff88;
-            box-shadow: 0 0 10px #00ff88;
-        }
-        
-        .hand-text {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 12px;
-            font-weight: 400;
-        }
-        
-        /* Camera Feed (Hidden but functional) */
-        .camera-feed {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 200px;
-            height: 150px;
-            border-radius: 8px;
-            overflow: hidden;
-            opacity: 0.3;
-            z-index: 100;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .camera-feed video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
-        
-        /* Instructions (Fades out after 10 seconds) */
-        .instructions {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 25px;
+            right: 25px;
             z-index: 100;
             color: rgba(255, 255, 255, 0.7);
-            font-size: 13px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px 20px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-            max-width: 400px;
-            animation: fadeOut 10s forwards;
+            font-size: 11px;
+            font-family: 'Monaco', 'Consolas', monospace;
         }
         
-        @keyframes fadeOut {
-            0% { opacity: 1; }
-            80% { opacity: 1; }
-            100% { opacity: 0; }
+        .performance span {
+            color: #00ff88;
+        }
+        
+        /* Connection Quality */
+        .connection {
+            position: absolute;
+            top: 45px;
+            right: 25px;
+            z-index: 100;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 9px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .connection-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #00ff88;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
     </style>
 </head>
 <body>
     <canvas id="mainCanvas"></canvas>
     
-    <!-- Professional Branding -->
+    <!-- Minimal Branding -->
     <div class="brand">
         <div class="brand-name">BISWAJIT ROY</div>
-        <div class="brand-subtitle">EARTH CONTROL SYSTEM</div>
+        <div class="brand-subtitle">EARTH CONTROL v4.0</div>
     </div>
     
-    <!-- Hand Status -->
-    <div class="hand-status">
-        <div class="hand-dot" id="handDot"></div>
-        <div class="hand-text" id="handText">INITIALIZING...</div>
+    <!-- Performance Indicator -->
+    <div class="performance">
+        <span id="fpsCounter">60</span> FPS
     </div>
     
-    <!-- Camera Feed -->
-    <div class="camera-feed">
-        <video id="cameraVideo" autoplay playsinline muted></video>
-    </div>
-    
-    <!-- Instructions -->
-    <div class="instructions">
-        Move hand in front of camera to control Earth • ✊ Fist = Zoom • 🖐️ Open = Rotate • ✌️ Two Fingers = Change View
+    <!-- Connection Quality -->
+    <div class="connection">
+        <div class="connection-dot"></div>
+        <span id="connectionStatus">STABLE</span>
     </div>
 
     <!-- Three.js -->
@@ -156,210 +112,182 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
     <script>
-        // ========== PROFESSIONAL EARTH CONTROL SYSTEM ==========
-        console.log("🚀 BISWAJIT ROY - Professional Earth Control System v3.0");
+        // ========== OPTIMIZED EARTH CONTROL SYSTEM ==========
+        console.time('System Init');
         
-        // ========== CONFIGURATION ==========
-        const CONFIG = {
-            // Earth Settings
-            EARTH_RADIUS: 5,
-            EARTH_SEGMENTS: 128,
-            ROTATION_SPEED: 0.002,
-            AUTO_ROTATION: true,
-            
-            // Camera Settings
-            CAMERA_DISTANCE: 20,
-            CAMERA_MIN_DISTANCE: 10,
-            CAMERA_MAX_DISTANCE: 40,
-            CAMERA_SMOOTHNESS: 0.1,
-            
-            // Hand Control
-            HAND_SMOOTHING: 0.2,
-            ROTATION_SENSITIVITY: 2.5,
-            ZOOM_SENSITIVITY: 0.8,
-            ZOOM_SPEED: 0.05,
-            
-            // Physics
-            INERTIA_DECAY: 0.95,
-            FRICTION: 0.92,
-            BOUNCE_DAMPING: 0.8
+        const SYSTEM = {
+            version: "4.0",
+            author: "BISWAJIT ROY",
+            performance: {
+                targetFPS: 60,
+                frameTime: 16.67,
+                lastFrame: 0,
+                fpsHistory: [],
+                stability: 100
+            }
         };
 
-        // ========== GLOBAL STATE ==========
+        // ========== CONFIGURATION ==========
+        const CONFIG = {
+            // Performance
+            MAX_PARTICLES: 8000,
+            EARTH_SEGMENTS: 96,
+            ENABLE_SHADOWS: false,
+            
+            // Earth
+            EARTH_RADIUS: 4.5,
+            AUTO_ROTATION: 0.001,
+            
+            // Camera
+            CAMERA_DISTANCE: 16,
+            CAMERA_MIN: 8,
+            CAMERA_MAX: 30,
+            CAMERA_SMOOTH: 0.12,
+            
+            // Hand Tracking (Optimized)
+            HAND_SMOOTHING: 0.25,
+            VELOCITY_SMOOTHING: 0.3,
+            DEADZONE: 0.01,
+            
+            // Control Sensitivity
+            ROTATION_SENSITIVITY: 3.0,
+            ZOOM_SENSITIVITY: 0.02,
+            INERTIA_DECAY: 0.92,
+            
+            // Gesture Detection
+            GESTURE_CONFIDENCE: 0.7,
+            PINCH_THRESHOLD: 0.04,
+            FIST_THRESHOLD: 0.15
+        };
+
+        // ========== STATE VARIABLES ==========
         let scene, camera, renderer;
         let earth, clouds, atmosphere;
         let earthGroup;
-        let stars = [];
         
-        // Hand State
+        // Optimized Hand State
         let hand = {
             detected: false,
+            confidence: 0,
             position: { x: 0.5, y: 0.5 },
-            smooth: { x: 0.5, y: 0.5 },
-            lastPos: { x: 0.5, y: 0.5 },
             velocity: { x: 0, y: 0 },
+            smoothed: { x: 0.5, y: 0.5 },
+            smoothedVel: { x: 0, y: 0 },
+            lastUpdate: 0,
+            frameTime: 0,
+            
+            // Gestures with confidence
             gestures: {
-                open: false,
-                fist: false,
-                pinch: false,
-                twoFingers: false,
-                thumbUp: false,
-                palmSize: 0
+                open: { active: false, confidence: 0 },
+                fist: { active: false, confidence: 0 },
+                pinch: { active: false, confidence: 0 },
+                twoFingers: { active: false, confidence: 0 }
             },
-            lastGesture: null,
-            zoomLevel: 1.0,
-            rotationInertia: { x: 0, y: 0 },
-            zoomInertia: 0,
-            lastPinchDistance: 0.1
+            
+            // Control state
+            rotation: { x: 0, y: 0 },
+            zoom: 1.0,
+            inertia: { x: 0, y: 0, z: 0 }
         };
         
         // Camera State
-        let cameraState = {
+        let cameraTarget = {
             distance: CONFIG.CAMERA_DISTANCE,
-            targetDistance: CONFIG.CAMERA_DISTANCE,
-            rotation: { x: 0, y: 0 },
-            targetRotation: { x: 0, y: 0 }
+            rotation: { x: 0, y: 0 }
         };
         
-        // System State
+        // Performance Tracking
+        let frameCount = 0;
+        let lastFPSUpdate = 0;
         let video;
-        let handResults = null;
-        let clock = new THREE.Clock();
-        let earthTextures = {};
-        let currentView = 'day';
-        let isInitialized = false;
+        let handTracker;
+        let isTracking = false;
 
-        // ========== INITIALIZE THREE.JS ==========
-        async function initThreeJS() {
-            // Scene
+        // ========== INIT THREE.JS (OPTIMIZED) ==========
+        function initThreeJS() {
+            // Scene with minimal fog
             scene = new THREE.Scene();
-            scene.fog = new THREE.Fog(0x000000, 50, 200);
+            scene.fog = new THREE.Fog(0x000000, 30, 100);
             
-            // Camera
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            // Camera with optimal FOV
+            camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
             camera.position.z = CONFIG.CAMERA_DISTANCE;
             
-            // Renderer
+            // Optimized Renderer
             renderer = new THREE.WebGLRenderer({ 
                 canvas: document.getElementById('mainCanvas'),
                 antialias: true,
-                alpha: false,
-                powerPreference: "high-performance"
+                powerPreference: "high-performance",
+                alpha: false
             });
+            
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Reduced for performance
             renderer.setClearColor(0x000000);
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.outputEncoding = THREE.sRGBEncoding;
             
-            // Load Earth textures
-            await loadEarthTextures();
+            if (CONFIG.ENABLE_SHADOWS) {
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            }
             
-            // Create realistic Earth
-            createRealisticEarth();
+            // Create optimized Earth
+            createOptimizedEarth();
             
-            // Create stars background
-            createStarField();
+            // Create minimal starfield
+            createMinimalStars();
             
-            // Setup advanced lighting
-            setupAdvancedLighting();
+            // Setup efficient lighting
+            setupEfficientLighting();
             
-            console.log("✅ Three.js initialized with realistic Earth");
+            console.timeEnd('System Init');
+            console.log("✅ Three.js initialized (Optimized)");
         }
 
-        // ========== LOAD EARTH TEXTURES ==========
-        async function loadEarthTextures() {
-            const textureLoader = new THREE.TextureLoader();
-            
-            // NASA-quality Earth textures
-            earthTextures.day = textureLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
-            earthTextures.night = textureLoader.load('https://threejs.org/examples/textures/planets/earth_night_2048.jpg');
-            earthTextures.specular = textureLoader.load('https://threejs.org/examples/textures/planets/earth_specular_2048.jpg');
-            earthTextures.normal = textureLoader.load('https://threejs.org/examples/textures/planets/earth_normal_2048.jpg');
-            earthTextures.clouds = textureLoader.load('https://threejs.org/examples/textures/planets/earth_clouds_1024.png');
-            
-            // Set texture parameters for quality
-            Object.values(earthTextures).forEach(texture => {
-                texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-                texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-            });
-            
-            console.log("✅ Earth textures loaded");
-        }
-
-        // ========== CREATE REALISTIC EARTH ==========
-        function createRealisticEarth() {
+        // ========== CREATE OPTIMIZED EARTH ==========
+        function createOptimizedEarth() {
             earthGroup = new THREE.Group();
             scene.add(earthGroup);
             
-            // Earth sphere (high detail)
+            // Optimized Earth geometry
             const earthGeometry = new THREE.SphereGeometry(
                 CONFIG.EARTH_RADIUS, 
                 CONFIG.EARTH_SEGMENTS, 
                 CONFIG.EARTH_SEGMENTS
             );
             
-            // Realistic Earth material
+            // Efficient Earth material
             const earthMaterial = new THREE.MeshPhongMaterial({
-                map: earthTextures.day,
-                specularMap: earthTextures.specular,
-                specular: new THREE.Color(0x333333),
-                shininess: 5,
-                normalMap: earthTextures.normal,
-                normalScale: new THREE.Vector2(0.5, 0.5),
-                transparent: true,
-                opacity: 1.0
+                color: 0x4488ff,
+                specular: 0x111111,
+                shininess: 10,
+                transparent: false
             });
             
             earth = new THREE.Mesh(earthGeometry, earthMaterial);
-            earth.castShadow = true;
-            earth.receiveShadow = true;
+            earth.castShadow = CONFIG.ENABLE_SHADOWS;
+            earth.receiveShadow = CONFIG.ENABLE_SHADOWS;
             earthGroup.add(earth);
             
-            // Clouds layer (slightly larger and rotating differently)
-            const cloudGeometry = new THREE.SphereGeometry(CONFIG.EARTH_RADIUS * 1.005, 64, 64);
-            const cloudMaterial = new THREE.MeshPhongMaterial({
-                map: earthTextures.clouds,
+            // Simple cloud layer
+            const cloudGeometry = new THREE.SphereGeometry(CONFIG.EARTH_RADIUS * 1.01, 48, 48);
+            const cloudMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
                 transparent: true,
-                opacity: 0.4,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending
+                opacity: 0.2,
+                depthWrite: false
             });
             
             clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
-            clouds.rotation.x = -0.2;
             earthGroup.add(clouds);
             
-            // Atmosphere glow
-            const atmosphereGeometry = new THREE.SphereGeometry(CONFIG.EARTH_RADIUS * 1.1, 64, 64);
-            const atmosphereMaterial = new THREE.ShaderMaterial({
-                uniforms: {
-                    glowColor: { value: new THREE.Color(0x0099ff) },
-                    viewVector: { value: camera.position }
-                },
-                vertexShader: `
-                    varying vec3 vNormal;
-                    varying vec3 vView;
-                    void main() {
-                        vNormal = normalize(normalMatrix * normal);
-                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                        vView = normalize(-mvPosition.xyz);
-                        gl_Position = projectionMatrix * mvPosition;
-                    }
-                `,
-                fragmentShader: `
-                    uniform vec3 glowColor;
-                    varying vec3 vNormal;
-                    varying vec3 vView;
-                    void main() {
-                        float intensity = pow(0.7 - dot(vNormal, vView), 2.0);
-                        gl_FragColor = vec4(glowColor, intensity * 0.3);
-                    }
-                `,
-                side: THREE.BackSide,
-                blending: THREE.AdditiveBlending,
-                transparent: true
+            // Atmosphere effect (shader removed for performance)
+            const atmosphereGeometry = new THREE.SphereGeometry(CONFIG.EARTH_RADIUS * 1.08, 32, 32);
+            const atmosphereMaterial = new THREE.MeshBasicMaterial({
+                color: 0x0099ff,
+                transparent: true,
+                opacity: 0.08,
+                side: THREE.BackSide
             });
             
             atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
@@ -367,80 +295,63 @@
             
             // Initial rotation
             earthGroup.rotation.x = -0.3;
-            earthGroup.rotation.y = 2.5;
-            
-            console.log("✅ Realistic Earth created");
         }
 
-        // ========== CREATE STAR FIELD ==========
-        function createStarField() {
-            const starCount = 2000;
-            const starGeometry = new THREE.BufferGeometry();
-            const starPositions = new Float32Array(starCount * 3);
-            const starColors = new Float32Array(starCount * 3);
+        // ========== CREATE MINIMAL STARS ==========
+        function createMinimalStars() {
+            const starCount = 1500;
+            const positions = new Float32Array(starCount * 3);
             
-            for (let i = 0; i < starCount; i++) {
-                const i3 = i * 3;
-                
-                // Random position in a sphere
-                const radius = 500;
+            for (let i = 0; i < starCount * 3; i += 3) {
+                // Spherical distribution
+                const radius = 100;
                 const theta = Math.random() * Math.PI * 2;
                 const phi = Math.acos(2 * Math.random() - 1);
                 
-                starPositions[i3] = radius * Math.sin(phi) * Math.cos(theta);
-                starPositions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
-                starPositions[i3 + 2] = radius * Math.cos(phi);
-                
-                // Random star colors (mostly white/blue)
-                starColors[i3] = 0.8 + Math.random() * 0.2;
-                starColors[i3 + 1] = 0.8 + Math.random() * 0.2;
-                starColors[i3 + 2] = 0.9 + Math.random() * 0.1;
+                positions[i] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i + 2] = radius * Math.cos(phi);
             }
             
-            starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-            starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             
-            const starMaterial = new THREE.PointsMaterial({
+            const material = new THREE.PointsMaterial({
                 size: 0.5,
-                vertexColors: true,
-                transparent: true,
+                color: 0xffffff,
                 sizeAttenuation: true
             });
             
-            const starField = new THREE.Points(starGeometry, starMaterial);
-            scene.add(starField);
+            const stars = new THREE.Points(geometry, material);
+            scene.add(stars);
         }
 
-        // ========== SETUP ADVANCED LIGHTING ==========
-        function setupAdvancedLighting() {
-            // Sun (directional light)
-            const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
-            sunLight.position.set(100, 50, 100);
-            sunLight.castShadow = true;
-            sunLight.shadow.mapSize.width = 2048;
-            sunLight.shadow.mapSize.height = 2048;
+        // ========== SETUP EFFICIENT LIGHTING ==========
+        function setupEfficientLighting() {
+            // Single directional light
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            sunLight.position.set(50, 30, 50);
+            sunLight.castShadow = CONFIG.ENABLE_SHADOWS;
             scene.add(sunLight);
             
-            // Hemisphere light for ambient
-            const hemiLight = new THREE.HemisphereLight(0x4488ff, 0x002244, 0.3);
-            scene.add(hemiLight);
-            
-            // Point light for Earth glow
-            const earthGlow = new THREE.PointLight(0x0099ff, 0.5, 50);
-            earthGlow.position.copy(earth.position);
-            scene.add(earthGlow);
+            // Ambient light only
+            const ambient = new THREE.AmbientLight(0x224466, 0.3);
+            scene.add(ambient);
         }
 
         // ========== INITIALIZE CAMERA ==========
         async function initCamera() {
-            video = document.getElementById('cameraVideo');
+            video = document.createElement('video');
+            video.style.display = 'none';
+            document.body.appendChild(video);
             
             try {
+                // Optimized camera settings
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: "user",
-                        width: { ideal: 640 },
-                        height: { ideal: 480 },
+                        width: { ideal: 480 }, // Reduced resolution
+                        height: { ideal: 360 },
                         frameRate: { ideal: 30 }
                     },
                     audio: false
@@ -449,279 +360,299 @@
                 video.srcObject = stream;
                 await video.play();
                 
-                // Start hand tracking
-                startHandTracking();
+                // Start optimized hand tracking
+                startOptimizedTracking();
                 
-                updateHandStatus(true, "CAMERA ACTIVE");
+                updateConnectionStatus("TRACKING");
                 return true;
             } catch (error) {
-                console.error("Camera error:", error);
-                updateHandStatus(false, "CAMERA ERROR");
+                console.warn("Camera not available, running in demo mode");
+                updateConnectionStatus("DEMO MODE");
+                startDemoMode();
                 return false;
             }
         }
 
-        // ========== START HAND TRACKING ==========
-        function startHandTracking() {
+        // ========== START OPTIMIZED TRACKING ==========
+        function startOptimizedTracking() {
             const hands = new Hands({
                 locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
             });
             
+            // Optimized settings
             hands.setOptions({
                 maxNumHands: 1,
-                modelComplexity: 1,
-                minDetectionConfidence: 0.7,
-                minTrackingConfidence: 0.7
+                modelComplexity: 0, // Reduced complexity for speed
+                minDetectionConfidence: 0.6,
+                minTrackingConfidence: 0.6,
+                selfieMode: true
             });
             
             hands.onResults((results) => {
-                handResults = results;
-                processHandResults(results);
+                if (!isTracking) return;
+                processHandFrame(results);
             });
             
-            const camera = new Camera(video, {
+            handTracker = new Camera(video, {
                 onFrame: async () => {
-                    try {
-                        await hands.send({image: video});
-                    } catch (e) {
-                        console.warn("Hand tracking frame skipped");
+                    if (isTracking) {
+                        try {
+                            await hands.send({image: video});
+                        } catch (e) {
+                            // Skip frame on error
+                        }
                     }
                 },
-                width: 640,
-                height: 480
+                width: 480,
+                height: 360
             });
             
-            camera.start();
-            console.log("✅ Hand tracking started");
+            handTracker.start();
+            isTracking = true;
+            console.log("✅ Hand tracking started (Optimized)");
         }
 
-        // ========== PROCESS HAND RESULTS ==========
-        function processHandResults(results) {
+        // ========== PROCESS HAND FRAME (OPTIMIZED) ==========
+        function processHandFrame(results) {
+            const now = performance.now();
+            hand.frameTime = now - hand.lastUpdate;
+            hand.lastUpdate = now;
+            
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                hand.detected = true;
                 const landmarks = results.multiHandLandmarks[0];
                 
-                // Get palm center (average of palm landmarks)
-                const palmLandmarks = [landmarks[0], landmarks[1], landmarks[5], landmarks[9], landmarks[13], landmarks[17]];
+                // Calculate palm center (optimized)
                 let sumX = 0, sumY = 0;
-                palmLandmarks.forEach(lm => {
-                    sumX += lm.x;
-                    sumY += lm.y;
-                });
+                for (let i = 0; i < 5; i++) {
+                    sumX += landmarks[i*4].x;
+                    sumY += landmarks[i*4].y;
+                }
                 
-                hand.position.x = sumX / palmLandmarks.length;
-                hand.position.y = sumY / palmLandmarks.length;
+                const newX = sumX / 5;
+                const newY = sumY / 5;
                 
                 // Calculate velocity
-                hand.velocity.x = hand.position.x - hand.lastPos.x;
-                hand.velocity.y = hand.position.y - hand.lastPos.y;
-                hand.lastPos.x = hand.position.x;
-                hand.lastPos.y = hand.position.y;
+                hand.velocity.x = newX - hand.position.x;
+                hand.velocity.y = newY - hand.position.y;
                 
-                // Smooth position
-                hand.smooth.x += (hand.position.x - hand.smooth.x) * CONFIG.HAND_SMOOTHING;
-                hand.smooth.y += (hand.position.y - hand.smooth.y) * CONFIG.HAND_SMOOTHING;
+                // Update position
+                hand.position.x = newX;
+                hand.position.y = newY;
                 
-                // Detect gestures
-                detectGestures(landmarks);
+                // Smooth position with velocity prediction
+                const smoothFactor = CONFIG.HAND_SMOOTHING;
+                const velFactor = CONFIG.VELOCITY_SMOOTHING;
                 
-                updateHandStatus(true, "HAND DETECTED");
+                hand.smoothed.x += (hand.position.x + hand.velocity.x * velFactor - hand.smoothed.x) * smoothFactor;
+                hand.smoothed.y += (hand.position.y + hand.velocity.y * velFactor - hand.smoothed.y) * smoothFactor;
+                hand.smoothedVel.x += (hand.velocity.x - hand.smoothedVel.x) * smoothFactor;
+                hand.smoothedVel.y += (hand.velocity.y - hand.smoothedVel.y) * smoothFactor;
+                
+                // Detect gestures (optimized)
+                detectOptimizedGestures(landmarks);
+                
+                hand.detected = true;
+                hand.confidence = Math.min(1.0, hand.confidence + 0.1);
+                
             } else {
                 hand.detected = false;
-                hand.velocity.x = hand.velocity.y = 0;
-                updateHandStatus(false, "NO HAND");
+                hand.confidence = Math.max(0, hand.confidence - 0.05);
             }
         }
 
-        // ========== DETECT GESTURES ==========
-        function detectGestures(landmarks) {
-            const thumbTip = landmarks[4];
-            const indexTip = landmarks[8];
-            const middleTip = landmarks[12];
-            const ringTip = landmarks[16];
-            const pinkyTip = landmarks[20];
+        // ========== DETECT OPTIMIZED GESTURES ==========
+        function detectOptimizedGestures(landmarks) {
+            const thumb = landmarks[4];
+            const index = landmarks[8];
+            const middle = landmarks[12];
+            const ring = landmarks[16];
+            const pinky = landmarks[20];
             const wrist = landmarks[0];
             
-            // Calculate distances
-            const thumbIndexDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
-            const indexMiddleDist = Math.hypot(indexTip.x - middleTip.x, indexTip.y - middleTip.y);
+            // Calculate key distances
+            const thumbIndexDist = Math.hypot(thumb.x - index.x, thumb.y - index.y);
+            const fingersToWrist = [];
             
-            // Detect palm size (for zoom)
-            let maxDist = 0;
-            for (let i = 0; i < landmarks.length; i++) {
-                for (let j = i + 1; j < landmarks.length; j++) {
-                    const dist = Math.hypot(landmarks[i].x - landmarks[j].x, landmarks[i].y - landmarks[j].y);
-                    if (dist > maxDist) maxDist = dist;
-                }
-            }
-            hand.gestures.palmSize = maxDist;
-            
-            // Gesture: Fist (all fingers close to wrist)
-            let fingersClose = true;
             for (let i = 8; i <= 20; i += 4) {
-                const dist = Math.hypot(landmarks[i].x - wrist.x, landmarks[i].y - wrist.y);
-                if (dist > 0.2) {
-                    fingersClose = false;
-                    break;
-                }
+                fingersToWrist.push(Math.hypot(landmarks[i].x - wrist.x, landmarks[i].y - wrist.y));
             }
-            hand.gestures.fist = fingersClose;
             
-            // Gesture: Open hand (not fist and fingers spread)
-            hand.gestures.open = !fingersClose && thumbIndexDist > 0.15;
+            // Gesture detection with confidence
+            const avgFingerDist = fingersToWrist.reduce((a, b) => a + b) / fingersToWrist.length;
             
-            // Gesture: Pinch (thumb and index close)
-            hand.gestures.pinch = thumbIndexDist < 0.05;
+            // Fist detection
+            const fistConfidence = Math.max(0, 1 - (avgFingerDist / CONFIG.FIST_THRESHOLD));
+            hand.gestures.fist = {
+                active: fistConfidence > CONFIG.GESTURE_CONFIDENCE,
+                confidence: fistConfidence
+            };
             
-            // Gesture: Two fingers (peace sign)
-            hand.gestures.twoFingers = (
-                thumbIndexDist < 0.08 && 
-                indexMiddleDist > 0.12 && 
-                !fingersClose
-            );
+            // Open hand (opposite of fist)
+            hand.gestures.open = {
+                active: fistConfidence < 0.3,
+                confidence: 1 - fistConfidence
+            };
             
-            // Gesture: Thumb up (thumb extended, others closed)
-            const thumbDist = Math.hypot(thumbTip.x - wrist.x, thumbTip.y - wrist.y);
-            const otherFingersClose = 
-                Math.hypot(indexTip.x - wrist.x, indexTip.y - wrist.y) < 0.15 &&
-                Math.hypot(middleTip.x - wrist.x, middleTip.y - wrist.y) < 0.15 &&
-                Math.hypot(ringTip.x - wrist.x, ringTip.y - wrist.y) < 0.15 &&
-                Math.hypot(pinkyTip.x - wrist.x, pinkyTip.y - wrist.y) < 0.15;
+            // Pinch detection
+            const pinchConfidence = Math.max(0, 1 - (thumbIndexDist / CONFIG.PINCH_THRESHOLD));
+            hand.gestures.pinch = {
+                active: pinchConfidence > CONFIG.GESTURE_CONFIDENCE,
+                confidence: pinchConfidence
+            };
             
-            hand.gestures.thumbUp = thumbDist > 0.2 && otherFingersClose;
+            // Two fingers (simple detection)
+            const middleRingDist = Math.hypot(middle.x - ring.x, middle.y - ring.y);
+            const twoFingerConfidence = thumbIndexDist < 0.08 && middleRingDist > 0.12 ? 0.8 : 0;
+            hand.gestures.twoFingers = {
+                active: twoFingerConfidence > CONFIG.GESTURE_CONFIDENCE,
+                confidence: twoFingerConfidence
+            };
         }
 
-        // ========== UPDATE HAND STATUS ==========
-        function updateHandStatus(detected, text) {
-            const dot = document.getElementById('handDot');
-            const textEl = document.getElementById('handText');
-            
-            if (detected) {
-                dot.className = 'hand-dot active';
-                textEl.textContent = text;
-            } else {
-                dot.className = 'hand-dot';
-                textEl.textContent = text;
-            }
-        }
-
-        // ========== UPDATE EARTH CONTROL ==========
+        // ========== UPDATE EARTH CONTROL (OPTIMIZED) ==========
         function updateEarthControl(deltaTime) {
-            if (!hand.detected) {
-                // Apply inertia decay when no hand
-                hand.rotationInertia.x *= CONFIG.INERTIA_DECAY;
-                hand.rotationInertia.y *= CONFIG.INERTIA_DECAY;
-                hand.zoomInertia *= CONFIG.INERTIA_DECAY;
-                
-                // Auto-rotate when no interaction
-                if (CONFIG.AUTO_ROTATION) {
-                    earthGroup.rotation.y += CONFIG.ROTATION_SPEED;
-                }
-                
+            // Auto-rotation when no hand
+            if (!hand.detected || hand.confidence < 0.3) {
+                earthGroup.rotation.y += CONFIG.AUTO_ROTATION;
+                hand.inertia.x *= CONFIG.INERTIA_DECAY;
+                hand.inertia.y *= CONFIG.INERTIA_DECAY;
                 return;
             }
             
-            // Calculate normalized hand movement
-            const moveX = (hand.smooth.x - 0.5) * 2;
-            const moveY = (hand.smooth.y - 0.5) * 2;
+            // Calculate control input from hand
+            const moveX = (hand.smoothed.x - 0.5) * 2;
+            const moveY = (hand.smoothed.y - 0.5) * 2;
             
-            // ROTATION CONTROL (with hand movement)
-            if (hand.gestures.open) {
-                const rotationX = moveY * CONFIG.ROTATION_SENSITIVITY * deltaTime;
-                const rotationY = -moveX * CONFIG.ROTATION_SENSITIVITY * deltaTime;
-                
-                // Add to inertia
-                hand.rotationInertia.x += rotationX;
-                hand.rotationInertia.y += rotationY;
+            // Apply deadzone
+            const deadzone = CONFIG.DEADZONE;
+            const inputX = Math.abs(moveX) > deadzone ? moveX : 0;
+            const inputY = Math.abs(moveY) > deadzone ? moveY : 0;
+            
+            // ROTATION CONTROL
+            if (hand.gestures.open.active && hand.gestures.open.confidence > 0.7) {
+                const rotationSpeed = CONFIG.ROTATION_SENSITIVITY * deltaTime;
+                hand.inertia.x += inputY * rotationSpeed;
+                hand.inertia.y += -inputX * rotationSpeed;
             }
             
-            // ZOOM CONTROL (with fist/palm size)
-            if (hand.gestures.fist) {
-                // Zoom out when fist
-                hand.zoomInertia -= CONFIG.ZOOM_SENSITIVITY * deltaTime;
-            } else if (hand.gestures.open) {
-                // Zoom in based on palm size
-                const zoomAmount = (hand.gestures.palmSize - 0.2) * CONFIG.ZOOM_SPEED * deltaTime;
-                hand.zoomInertia += zoomAmount;
+            // ZOOM CONTROL
+            if (hand.gestures.fist.active && hand.gestures.fist.confidence > 0.7) {
+                // Zoom out with fist
+                hand.inertia.z -= CONFIG.ZOOM_SENSITIVITY;
+            } else if (hand.gestures.pinch.active && hand.gestures.pinch.confidence > 0.7) {
+                // Zoom in with pinch
+                hand.inertia.z += CONFIG.ZOOM_SENSITIVITY;
             }
             
-            // PINCH ZOOM
-            if (hand.gestures.pinch) {
-                const currentPinch = hand.gestures.palmSize;
-                const pinchDelta = currentPinch - hand.lastPinchDistance;
-                hand.zoomInertia += pinchDelta * 5;
-                hand.lastPinchDistance = currentPinch;
+            // TWO FINGER ACTION (reset)
+            if (hand.gestures.twoFingers.active && hand.gestures.twoFingers.confidence > 0.7) {
+                if (!hand.lastTwoFingers) {
+                    // Reset view
+                    cameraTarget.distance = CONFIG.CAMERA_DISTANCE;
+                    cameraTarget.rotation.x = 0;
+                    cameraTarget.rotation.y = 0;
+                    hand.inertia.x = 0;
+                    hand.inertia.y = 0;
+                    hand.inertia.z = 0;
+                }
+                hand.lastTwoFingers = true;
             } else {
-                hand.lastPinchDistance = hand.gestures.palmSize;
+                hand.lastTwoFingers = false;
             }
             
-            // VIEW CHANGE (two fingers)
-            if (hand.gestures.twoFingers && !hand.gestures.lastTwoFingers) {
-                currentView = currentView === 'day' ? 'night' : 'day';
-                earth.material.map = earthTextures[currentView];
-                earth.material.needsUpdate = true;
-            }
-            hand.gestures.lastTwoFingers = hand.gestures.twoFingers;
+            // Apply inertia with decay
+            hand.inertia.x *= CONFIG.INERTIA_DECAY;
+            hand.inertia.y *= CONFIG.INERTIA_DECAY;
+            hand.inertia.z *= CONFIG.INERTIA_DECAY;
             
-            // RESET (thumb up)
-            if (hand.gestures.thumbUp && !hand.lastThumbUp) {
-                // Reset camera and rotation
-                cameraState.targetDistance = CONFIG.CAMERA_DISTANCE;
-                cameraState.targetRotation.x = 0;
-                cameraState.targetRotation.y = 0;
-                hand.rotationInertia.x = 0;
-                hand.rotationInertia.y = 0;
-                hand.zoomInertia = 0;
-            }
-            hand.lastThumbUp = hand.gestures.thumbUp;
+            // Apply rotation to Earth
+            earthGroup.rotation.x += hand.inertia.x;
+            earthGroup.rotation.y += hand.inertia.y;
             
-            // Apply rotation inertia to Earth
-            earthGroup.rotation.x += hand.rotationInertia.x;
-            earthGroup.rotation.y += hand.rotationInertia.y;
-            
-            // Apply friction to rotation inertia
-            hand.rotationInertia.x *= CONFIG.FRICTION;
-            hand.rotationInertia.y *= CONFIG.FRICTION;
-            
-            // Apply zoom inertia to camera
-            cameraState.targetDistance += hand.zoomInertia;
-            cameraState.targetDistance = Math.max(
-                CONFIG.CAMERA_MIN_DISTANCE,
-                Math.min(CONFIG.CAMERA_MAX_DISTANCE, cameraState.targetDistance)
-            );
-            
-            // Apply friction to zoom inertia
-            hand.zoomInertia *= CONFIG.FRICTION;
+            // Apply zoom to camera
+            cameraTarget.distance += hand.inertia.z;
+            cameraTarget.distance = Math.max(CONFIG.CAMERA_MIN, Math.min(CONFIG.CAMERA_MAX, cameraTarget.distance));
             
             // Smooth camera movement
-            cameraState.distance += (cameraState.targetDistance - cameraState.distance) * CONFIG.CAMERA_SMOOTHNESS;
-            camera.position.z = cameraState.distance;
+            camera.position.z += (cameraTarget.distance - camera.position.z) * CONFIG.CAMERA_SMOOTH;
             
-            // Update cloud rotation (slightly different speed)
-            clouds.rotation.y += deltaTime * 0.001;
+            // Rotate clouds
+            clouds.rotation.y += deltaTime * 0.0005;
         }
 
-        // ========== ANIMATION LOOP ==========
-        function animate() {
+        // ========== DEMO MODE ==========
+        function startDemoMode() {
+            // Auto-rotation for demo
+            setInterval(() => {
+                if (!hand.detected) {
+                    earthGroup.rotation.y += CONFIG.AUTO_ROTATION * 2;
+                    camera.position.z = 16 + Math.sin(performance.now() * 0.001) * 2;
+                }
+            }, 16);
+        }
+
+        // ========== UPDATE PERFORMANCE ==========
+        function updatePerformance(now) {
+            frameCount++;
+            
+            if (now >= lastFPSUpdate + 1000) {
+                const fps = Math.round((frameCount * 1000) / (now - lastFPSUpdate));
+                document.getElementById('fpsCounter').textContent = fps;
+                
+                // Update stability
+                SYSTEM.performance.fpsHistory.push(fps);
+                if (SYSTEM.performance.fpsHistory.length > 30) {
+                    SYSTEM.performance.fpsHistory.shift();
+                }
+                
+                const avgFPS = SYSTEM.performance.fpsHistory.reduce((a, b) => a + b) / SYSTEM.performance.fpsHistory.length;
+                SYSTEM.performance.stability = Math.min(100, (avgFPS / 60) * 100);
+                
+                frameCount = 0;
+                lastFPSUpdate = now;
+            }
+        }
+
+        // ========== UPDATE CONNECTION STATUS ==========
+        function updateConnectionStatus(status) {
+            const element = document.getElementById('connectionStatus');
+            if (element) {
+                element.textContent = status;
+                
+                // Visual feedback
+                const dot = document.querySelector('.connection-dot');
+                if (status === "TRACKING") {
+                    dot.style.background = "#00ff88";
+                } else if (status === "DEMO MODE") {
+                    dot.style.background = "#ffaa00";
+                } else {
+                    dot.style.background = "#ff4444";
+                }
+            }
+        }
+
+        // ========== ANIMATION LOOP (OPTIMIZED) ==========
+        let lastTime = 0;
+        function animate(currentTime) {
             requestAnimationFrame(animate);
             
-            const deltaTime = Math.min(clock.getDelta(), 0.1);
+            const deltaTime = Math.min((currentTime - lastTime) / 1000, 0.1);
+            lastTime = currentTime;
             
             // Update Earth control
             updateEarthControl(deltaTime);
             
-            // Update camera to look at Earth
+            // Update performance
+            updatePerformance(currentTime);
+            
+            // Camera look at Earth
             camera.lookAt(0, 0, 0);
             
-            // Update atmosphere shader
-            if (atmosphere.material.uniforms) {
-                atmosphere.material.uniforms.viewVector.value = camera.position;
-            }
-            
+            // Render
             renderer.render(scene, camera);
         }
 
-        // ========== WINDOW RESIZE ==========
+        // ========== WINDOW RESIZE (OPTIMIZED) ==========
         function onResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -730,27 +661,30 @@
 
         // ========== INITIALIZE SYSTEM ==========
         async function init() {
-            console.log("🚀 Initializing Professional Earth Control System...");
+            console.log("🚀 Initializing Optimized Earth Control System v4.0");
             
             // Initialize Three.js
-            await initThreeJS();
+            initThreeJS();
             
-            // Initialize Camera
-            await initCamera();
+            // Initialize Camera (non-blocking)
+            setTimeout(() => initCamera(), 100);
             
-            // Start animation loop
-            animate();
+            // Start animation
+            animate(0);
             
-            // Add event listeners
-            window.addEventListener('resize', onResize);
+            // Add optimized event listeners
+            window.addEventListener('resize', onResize, { passive: true });
             
-            // Mark as initialized
-            isInitialized = true;
-            console.log("✅ System fully initialized and ready");
+            // Performance monitoring
+            setInterval(() => {
+                if (SYSTEM.performance.stability < 80) {
+                    console.warn("Performance warning: ", SYSTEM.performance.stability.toFixed(1) + "%");
+                }
+            }, 5000);
         }
 
         // ========== START EVERYTHING ==========
-        init();
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
