@@ -49,7 +49,7 @@
             margin-top: 2px;
         }
         
-        /* Hand Status */
+        /* Status */
         .status {
             position: absolute;
             top: 30px;
@@ -87,7 +87,7 @@
             box-shadow: 0 0 10px #00ff88;
         }
         
-        /* Loading Overlay */
+        /* Loading Screen */
         .loader {
             position: fixed;
             top: 0;
@@ -96,7 +96,6 @@
             height: 100%;
             background: #000000;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 1000;
@@ -110,7 +109,7 @@
         .loader-spinner {
             width: 40px;
             height: 40px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(0, 255, 255, 0.1);
             border-top: 2px solid #00ffff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -129,15 +128,35 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* FPS Counter */
-        .fps {
+        /* Info Panel */
+        .info-panel {
             position: absolute;
             bottom: 30px;
-            right: 30px;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 11px;
-            font-family: 'Monaco', monospace;
+            left: 30px;
             z-index: 100;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 11px;
+            max-width: 250px;
+        }
+        
+        .info-item {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .info-label {
+            color: #88ffff;
+        }
+        
+        .info-value {
+            color: #ffffff;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -152,13 +171,13 @@
         </div>
     </div>
     
-    <!-- Professional Branding -->
+    <!-- Branding -->
     <div class="brand">
         <div class="brand-name">BISWAJIT ROY</div>
-        <div class="brand-subtitle">EARTH CONTROL SYSTEM</div>
+        <div class="brand-subtitle">EARTH CONTROL v6.0</div>
     </div>
     
-    <!-- Status Indicators -->
+    <!-- Status -->
     <div class="status">
         <div class="status-item">
             <div class="status-dot" id="cameraStatus"></div>
@@ -168,10 +187,31 @@
             <div class="status-dot" id="handStatus"></div>
             <span id="handText">HAND</span>
         </div>
+        <div class="status-item">
+            <div class="status-dot" id="graphicsStatus"></div>
+            <span id="graphicsText">GRAPHICS</span>
+        </div>
     </div>
     
-    <!-- FPS Counter -->
-    <div class="fps" id="fpsCounter">60 FPS</div>
+    <!-- Info Panel -->
+    <div class="info-panel" id="infoPanel">
+        <div class="info-item">
+            <span class="info-label">ROTATION:</span>
+            <span class="info-value" id="rotationValue">0°</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">ZOOM:</span>
+            <span class="info-value" id="zoomValue">1.0x</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">VIEW MODE:</span>
+            <span class="info-value" id="viewMode">DAY</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">PERFORMANCE:</span>
+            <span class="info-value" id="perfValue">OPTIMAL</span>
+        </div>
+    </div>
 
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -180,296 +220,769 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
     <script>
-        // ========== PROFESSIONAL EARTH CONTROL SYSTEM ==========
-        console.time('SystemBoot');
+        // ========== ULTRA REALISTIC EARTH SYSTEM ==========
+        console.time('SystemInit');
         
-        const SYSTEM = {
-            version: "5.0",
+        const EARTH_SYSTEM = {
+            version: "6.0",
             author: "BISWAJIT ROY",
-            mode: "PROFESSIONAL",
-            debug: false
+            mode: "ULTRA_REALISTIC",
+            graphics: {
+                quality: "ULTRA",
+                shaders: true,
+                postProcessing: true
+            }
         };
 
-        // ========== CONFIGURATION ==========
+        // ========== ADVANCED CONFIGURATION ==========
         const CONFIG = {
             // Performance
             TARGET_FPS: 60,
-            MAX_DELTA_TIME: 0.1,
+            MAX_DELTA_TIME: 0.05,
+            ADAPTIVE_QUALITY: true,
             
-            // Earth
-            EARTH_RADIUS: 4.8,
-            EARTH_SEGMENTS: 128,
-            EARTH_COLOR: 0x1E90FF,
-            OCEAN_COLOR: 0x1A5FB4,
-            LAND_COLOR: 0x2E8B57,
+            // Earth Dimensions
+            EARTH_RADIUS: 6.371,
+            EARTH_SEGMENTS: 256, // Ultra high detail
+            EARTH_BUMP_SCALE: 0.02,
             
             // Camera
-            CAMERA_DISTANCE: 18,
-            CAMERA_MIN: 12,
-            CAMERA_MAX: 35,
+            CAMERA_DISTANCE: 25,
+            CAMERA_MIN: 15,
+            CAMERA_MAX: 50,
+            CAMERA_FOV: 60,
             CAMERA_SMOOTH: 0.08,
             
             // Hand Tracking
-            HAND_SMOOTHING: 0.15,
-            VELOCITY_WEIGHT: 0.3,
-            GESTURE_CONFIDENCE: 0.8,
+            HAND_SMOOTHING: 0.12,
+            VELOCITY_PREDICTION: 0.25,
+            GESTURE_CONFIDENCE: 0.85,
             
-            // Physics
-            INERTIA_DECAY: 0.93,
-            ROTATION_SENSITIVITY: 2.0,
-            ZOOM_SENSITIVITY: 0.4,
+            // Control Physics
+            INERTIA_DECAY: 0.90,
+            ROTATION_SENSITIVITY: 3.5,
+            ZOOM_SENSITIVITY: 0.6,
+            BOUNCE_DAMPING: 0.85,
             
-            // Visual
-            ATMOSPHERE_INTENSITY: 0.15,
-            CLOUD_OPACITY: 0.35
+            // Visual Settings
+            ATMOSPHERE_INTENSITY: 0.4,
+            CLOUD_OPACITY: 0.5,
+            OCEAN_SPECULAR: 0.8,
+            TERRAIN_BUMP: 0.05,
+            
+            // Colors (Physically Based)
+            OCEAN_DEEP: 0x001a33,
+            OCEAN_SHALLOW: 0x004466,
+            LAND_BASE: 0x2d5a27,
+            LAND_HIGH: 0x8B4513,
+            DESERT: 0xD2691E,
+            POLAR: 0xF5F5F5,
+            CLOUD_WHITE: 0xFFFFFF,
+            ATMOSPHERE_BLUE: 0x87CEEB
         };
 
-        // ========== STATE MANAGEMENT ==========
+        // ========== SYSTEM STATE ==========
         let scene, camera, renderer;
-        let earth, clouds, atmosphere;
-        let earthGroup;
+        let earth, atmosphere, clouds;
+        let earthGroup, lightingGroup;
+        let composer, renderPass, bloomPass;
         
-        // Core State
+        // Advanced State
         let state = {
+            graphics: {
+                quality: "ULTRA",
+                fps: 60,
+                frameTime: 0,
+                adaptiveMode: true,
+                postProcessing: true
+            },
             hand: {
                 detected: false,
                 confidence: 0,
                 position: { x: 0.5, y: 0.5 },
                 smoothed: { x: 0.5, y: 0.5 },
                 velocity: { x: 0, y: 0 },
+                acceleration: { x: 0, y: 0 },
                 gestures: {
-                    open: false,
-                    fist: false,
-                    pinch: false
+                    open: { active: false, confidence: 0 },
+                    fist: { active: false, confidence: 0 },
+                    pinch: { active: false, confidence: 0 },
+                    twoFingers: { active: false, confidence: 0 },
+                    thumbUp: { active: false, confidence: 0 }
                 },
-                inertia: { x: 0, y: 0, z: 0 }
+                inertia: { x: 0, y: 0, z: 0 },
+                lastGesture: null
+            },
+            earth: {
+                rotation: { x: 0, y: 0 },
+                autoRotation: 0.0005,
+                cloudsRotation: 0.0002,
+                atmospherePulse: 0,
+                oceanWaves: 0
             },
             camera: {
                 distance: CONFIG.CAMERA_DISTANCE,
                 targetDistance: CONFIG.CAMERA_DISTANCE,
+                fov: CONFIG.CAMERA_FOV,
                 rotation: { x: 0, y: 0 }
             },
             system: {
                 isReady: false,
-                fps: 60,
+                startTime: 0,
                 frameCount: 0,
-                lastFPSUpdate: 0,
-                lastFrameTime: 0
+                lastUpdate: 0,
+                performance: "OPTIMAL"
             }
         };
         
-        // External Resources
+        // Resources
         let videoElement;
         let handTracker = null;
+        let clock = new THREE.Clock();
 
         // ========== INITIALIZATION ==========
         async function init() {
-            updateLoader("Initializing 3D Engine...");
+            state.system.startTime = performance.now();
+            updateLoader("Initializing Graphics Engine...");
             
-            // Initialize Three.js first
-            initThreeJS();
+            // Initialize Three.js with advanced features
+            initAdvancedThreeJS();
             
-            // Initialize camera and hand tracking
+            // Initialize camera system
             updateLoader("Starting Camera System...");
-            const cameraSuccess = await initCamera();
+            const cameraSuccess = await initCameraSystem();
             
             if (cameraSuccess) {
                 updateStatus('camera', true, "ACTIVE");
-                updateLoader("Starting Hand Tracking...");
-                await startHandTracking();
+                updateLoader("Initializing Hand Tracking...");
+                await initHandTracking();
             } else {
-                updateStatus('camera', false, "ERROR");
-                updateLoader("Camera Failed - Using Demo Mode");
+                updateStatus('camera', false, "DEMO MODE");
+                updateLoader("Using Demo Mode...");
                 startDemoMode();
             }
             
-            // Hide loader and start animation
+            // Finalize system
             setTimeout(() => {
                 hideLoader();
                 state.system.isReady = true;
-                console.timeEnd('SystemBoot');
-                console.log(`✅ ${SYSTEM.author} - ${SYSTEM.version} READY`);
-            }, 1000);
+                console.timeEnd('SystemInit');
+                console.log(`🌍 ${EARTH_SYSTEM.author} - ${EARTH_SYSTEM.version} READY`);
+                updateStatus('graphics', true, "ULTRA");
+            }, 1500);
             
             // Start main loop
             requestAnimationFrame(animate);
             
-            // Setup window resize
-            window.addEventListener('resize', onWindowResize, { passive: true });
+            // Setup event listeners
+            setupEventListeners();
         }
 
-        // ========== THREE.JS INITIALIZATION ==========
-        function initThreeJS() {
-            // Scene
+        // ========== ADVANCED THREE.JS INIT ==========
+        function initAdvancedThreeJS() {
+            // Advanced Scene
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x000000);
+            scene.fog = new THREE.Fog(0x000000, 100, 300);
             
-            // Camera
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            // Advanced Camera
+            camera = new THREE.PerspectiveCamera(
+                CONFIG.CAMERA_FOV,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
             camera.position.set(0, 0, CONFIG.CAMERA_DISTANCE);
             
-            // Renderer
+            // High-performance Renderer
             renderer = new THREE.WebGLRenderer({
                 canvas: document.getElementById('canvas'),
                 antialias: true,
                 alpha: false,
-                powerPreference: "high-performance"
+                powerPreference: "high-performance",
+                precision: "highp"
             });
             
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.setClearColor(0x000000);
             renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.shadowMap.autoUpdate = true;
             
-            // Create Earth system
-            createEarthSystem();
+            // Create ultra realistic Earth
+            updateLoader("Creating Earth Model...");
+            createUltraRealisticEarth();
             
-            // Create stars
-            createStarField();
+            // Create galaxy background
+            updateLoader("Creating Background...");
+            createGalaxyBackground();
             
-            // Setup lighting
-            setupLighting();
+            // Setup advanced lighting
+            updateLoader("Setting Up Lighting...");
+            setupAdvancedLighting();
+            
+            // Initialize post-processing
+            if (state.graphics.postProcessing) {
+                initPostProcessing();
+            }
         }
 
-        // ========== CREATE EARTH SYSTEM ==========
-        function createEarthSystem() {
+        // ========== CREATE ULTRA REALISTIC EARTH ==========
+        function createUltraRealisticEarth() {
             earthGroup = new THREE.Group();
             scene.add(earthGroup);
             
-            // Main Earth sphere
+            // Create Earth with ultra-high detail geometry
             const earthGeometry = new THREE.SphereGeometry(
                 CONFIG.EARTH_RADIUS,
                 CONFIG.EARTH_SEGMENTS,
                 CONFIG.EARTH_SEGMENTS
             );
             
-            const earthMaterial = new THREE.MeshPhongMaterial({
-                color: CONFIG.EARTH_COLOR,
-                specular: 0x222222,
-                shininess: 10,
-                flatShading: false
+            // Apply terrain displacement using noise
+            applyTerrainDisplacement(earthGeometry);
+            
+            // Create advanced Earth material
+            const earthMaterial = new THREE.MeshPhysicalMaterial({
+                color: CONFIG.OCEAN_DEEP,
+                roughness: 0.3,
+                metalness: 0.1,
+                clearcoat: 0.5,
+                clearcoatRoughness: 0.1,
+                sheen: 0.1,
+                transmission: 0.2,
+                thickness: 1.0,
+                specularIntensity: 1.0,
+                envMapIntensity: 1.0,
+                bumpScale: CONFIG.EARTH_BUMP_SCALE
             });
             
             earth = new THREE.Mesh(earthGeometry, earthMaterial);
+            earth.castShadow = true;
+            earth.receiveShadow = true;
             earthGroup.add(earth);
             
-            // Create continents (using noise)
-            createContinents();
+            // Create detailed continents
+            createDetailedContinents();
             
-            // Clouds layer
-            const cloudGeometry = new THREE.SphereGeometry(CONFIG.EARTH_RADIUS * 1.01, 96, 96);
-            const cloudMaterial = new THREE.MeshPhongMaterial({
-                color: 0xffffff,
+            // Create ocean surface with waves
+            createOceanSurface();
+            
+            // Create advanced cloud system
+            createCloudSystem();
+            
+            // Create realistic atmosphere
+            createAtmosphereSystem();
+            
+            // Create polar ice caps
+            createPolarIceCaps();
+            
+            // Create city lights for night side
+            createCityLights();
+            
+            // Initial positioning
+            earthGroup.rotation.x = -0.3;
+            earthGroup.rotation.y = 2.5;
+        }
+
+        // ========== APPLY TERRAIN DISPLACEMENT ==========
+        function applyTerrainDisplacement(geometry) {
+            const positionAttribute = geometry.attributes.position;
+            const vertex = new THREE.Vector3();
+            const normal = new THREE.Vector3();
+            
+            for (let i = 0; i < positionAttribute.count; i++) {
+                vertex.fromBufferAttribute(positionAttribute, i);
+                normal.fromBufferAttribute(geometry.attributes.normal, i);
+                
+                // Generate terrain using multiple noise octaves
+                const height = generateTerrainHeight(
+                    vertex.x, 
+                    vertex.y, 
+                    vertex.z,
+                    CONFIG.EARTH_RADIUS
+                );
+                
+                // Displace vertex along normal
+                vertex.add(normal.multiplyScalar(height * CONFIG.TERRAIN_BUMP));
+                
+                positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z);
+            }
+            
+            positionAttribute.needsUpdate = true;
+            geometry.computeVertexNormals();
+        }
+
+        // ========== GENERATE TERRAIN HEIGHT ==========
+        function generateTerrainHeight(x, y, z, radius) {
+            // Normalize to sphere surface
+            const lat = Math.asin(y / radius);
+            const lon = Math.atan2(z, x);
+            
+            // Generate multi-octave Perlin-like noise
+            let height = 0;
+            let amplitude = 1;
+            let frequency = 1;
+            const octaves = 6;
+            
+            for (let i = 0; i < octaves; i++) {
+                const nx = Math.cos(lon) * Math.cos(lat) * frequency;
+                const ny = Math.sin(lat) * frequency;
+                const nz = Math.sin(lon) * Math.cos(lat) * frequency;
+                
+                height += noise3D(nx, ny, nz) * amplitude;
+                amplitude *= 0.5;
+                frequency *= 2.0;
+            }
+            
+            // Normalize and add bias for continents
+            height = (height + 1) * 0.5;
+            
+            // Create continent shapes
+            const continentMask = Math.pow(
+                Math.sin(lat * 4) * Math.cos(lon * 3) * 0.5 + 0.5,
+                2
+            );
+            
+            return height * continentMask * 0.3;
+        }
+
+        // ========== 3D NOISE FUNCTION ==========
+        function noise3D(x, y, z) {
+            const X = Math.floor(x) & 255;
+            const Y = Math.floor(y) & 255;
+            const Z = Math.floor(z) & 255;
+            
+            x -= Math.floor(x);
+            y -= Math.floor(y);
+            z -= Math.floor(z);
+            
+            const u = fade(x);
+            const v = fade(y);
+            const w = fade(z);
+            
+            const A = p[X] + Y;
+            const AA = p[A] + Z;
+            const AB = p[A + 1] + Z;
+            const B = p[X + 1] + Y;
+            const BA = p[B] + Z;
+            const BB = p[B + 1] + Z;
+            
+            return lerp(
+                w,
+                lerp(v, lerp(u, grad(p[AA], x, y, z),
+                    grad(p[BA], x - 1, y, z)),
+                lerp(u, grad(p[AB], x, y - 1, z),
+                    grad(p[BB], x - 1, y - 1, z))),
+                lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1),
+                    grad(p[BA + 1], x - 1, y, z - 1)),
+                lerp(u, grad(p[AB + 1], x, y - 1, z - 1),
+                    grad(p[BB + 1], x - 1, y - 1, z - 1)))
+            );
+        }
+
+        // ========== NOISE HELPER FUNCTIONS ==========
+        function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+        function lerp(t, a, b) { return a + t * (b - a); }
+        function grad(hash, x, y, z) {
+            const h = hash & 15;
+            const u = h < 8 ? x : y;
+            const v = h < 4 ? y : h === 12 || h === 14 ? x : z;
+            return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+        }
+        
+        // Permutation table
+        const p = [];
+        for (let i = 0; i < 256; i++) p[i] = Math.floor(Math.random() * 256);
+        for (let i = 0; i < 256; i++) p[256 + i] = p[i];
+
+        // ========== CREATE DETAILED CONTINENTS ==========
+        function createDetailedContinents() {
+            const continentGeometry = new THREE.IcosahedronGeometry(
+                CONFIG.EARTH_RADIUS * 0.99,
+                4
+            );
+            
+            // Apply continent-specific displacement
+            const posAttr = continentGeometry.attributes.position;
+            for (let i = 0; i < posAttr.count; i++) {
+                const x = posAttr.getX(i);
+                const y = posAttr.getY(i);
+                const z = posAttr.getZ(i);
+                
+                const lat = Math.asin(y / CONFIG.EARTH_RADIUS);
+                const lon = Math.atan2(z, x);
+                
+                // Create continent patterns
+                const continentPattern = 
+                    Math.sin(lat * 8) * Math.cos(lon * 6) +
+                    Math.sin(lat * 4) * Math.cos(lon * 3) * 0.5;
+                
+                if (continentPattern > 0.3) {
+                    // Mountain ranges
+                    const mountainHeight = Math.pow(
+                        Math.sin(lat * 16) * Math.cos(lon * 12),
+                        2
+                    ) * 0.2;
+                    
+                    const nx = x / CONFIG.EARTH_RADIUS;
+                    const ny = y / CONFIG.EARTH_RADIUS;
+                    const nz = z / CONFIG.EARTH_RADIUS;
+                    
+                    posAttr.setXYZ(
+                        i,
+                        x + nx * mountainHeight,
+                        y + ny * mountainHeight,
+                        z + nz * mountainHeight
+                    );
+                }
+            }
+            
+            continentGeometry.computeVertexNormals();
+            
+            const continentMaterial = new THREE.MeshStandardMaterial({
+                color: CONFIG.LAND_BASE,
+                roughness: 0.8,
+                metalness: 0.2,
+                bumpScale: 0.1
+            });
+            
+            const continents = new THREE.Mesh(continentGeometry, continentMaterial);
+            continents.castShadow = true;
+            continents.receiveShadow = true;
+            earth.add(continents);
+        }
+
+        // ========== CREATE OCEAN SURFACE ==========
+        function createOceanSurface() {
+            const oceanGeometry = new THREE.SphereGeometry(
+                CONFIG.EARTH_RADIUS * 0.995,
+                CONFIG.EARTH_SEGMENTS,
+                CONFIG.EARTH_SEGMENTS
+            );
+            
+            const oceanMaterial = new THREE.MeshPhysicalMaterial({
+                color: CONFIG.OCEAN_SHALLOW,
+                transmission: 0.8,
+                thickness: 0.5,
+                roughness: 0.1,
+                metalness: 0.0,
+                ior: 1.33,
+                specularIntensity: 1.0,
+                envMapIntensity: 1.0,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            const ocean = new THREE.Mesh(oceanGeometry, oceanMaterial);
+            ocean.castShadow = false;
+            ocean.receiveShadow = true;
+            earth.add(ocean);
+            
+            // Store reference for wave animation
+            state.earth.oceanMesh = ocean;
+        }
+
+        // ========== CREATE CLOUD SYSTEM ==========
+        function createCloudSystem() {
+            const cloudGeometry = new THREE.SphereGeometry(
+                CONFIG.EARTH_RADIUS * 1.005,
+                128,
+                128
+            );
+            
+            // Add cloud thickness variation
+            const posAttr = cloudGeometry.attributes.position;
+            for (let i = 0; i < posAttr.count; i++) {
+                const x = posAttr.getX(i);
+                const y = posAttr.getY(i);
+                const z = posAttr.getZ(i);
+                
+                const lat = Math.asin(y / (CONFIG.EARTH_RADIUS * 1.005));
+                const cloudDensity = Math.sin(lat * 12) * 0.5 + 0.5;
+                
+                if (Math.random() < cloudDensity) {
+                    const offset = (Math.random() - 0.5) * 0.05;
+                    const nx = x / (CONFIG.EARTH_RADIUS * 1.005);
+                    const ny = y / (CONFIG.EARTH_RADIUS * 1.005);
+                    const nz = z / (CONFIG.EARTH_RADIUS * 1.005);
+                    
+                    posAttr.setXYZ(
+                        i,
+                        x + nx * offset,
+                        y + ny * offset,
+                        z + nz * offset
+                    );
+                }
+            }
+            
+            cloudGeometry.computeVertexNormals();
+            
+            const cloudMaterial = new THREE.MeshLambertMaterial({
+                color: CONFIG.CLOUD_WHITE,
                 transparent: true,
                 opacity: CONFIG.CLOUD_OPACITY,
-                depthWrite: false
+                side: THREE.DoubleSide
             });
             
             clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
+            clouds.castShadow = true;
+            clouds.receiveShadow = false;
             earthGroup.add(clouds);
+        }
+
+        // ========== CREATE ATMOSPHERE SYSTEM ==========
+        function createAtmosphereSystem() {
+            const atmosphereGeometry = new THREE.SphereGeometry(
+                CONFIG.EARTH_RADIUS * 1.1,
+                64,
+                64
+            );
             
-            // Atmosphere
-            const atmosphereGeometry = new THREE.SphereGeometry(CONFIG.EARTH_RADIUS * 1.05, 64, 64);
-            const atmosphereMaterial = new THREE.MeshBasicMaterial({
-                color: 0x00aaff,
+            const atmosphereMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    color: { value: new THREE.Color(CONFIG.ATMOSPHERE_BLUE) },
+                    intensity: { value: CONFIG.ATMOSPHERE_INTENSITY },
+                    time: { value: 0 }
+                },
+                vertexShader: `
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                        vPosition = mvPosition.xyz;
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 color;
+                    uniform float intensity;
+                    uniform float time;
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    
+                    void main() {
+                        float fresnel = 1.0 - dot(normalize(vNormal), normalize(-vPosition));
+                        fresnel = pow(fresnel, 3.0);
+                        
+                        // Add subtle pulsing
+                        float pulse = sin(time * 0.5) * 0.1 + 1.0;
+                        
+                        // Create atmospheric scattering
+                        float scattering = pow(fresnel, 0.5) * intensity * pulse;
+                        
+                        // Add blue tint that fades out
+                        vec3 atmosphereColor = color * scattering;
+                        
+                        gl_FragColor = vec4(atmosphereColor, scattering * 0.3);
+                    }
+                `,
                 transparent: true,
-                opacity: CONFIG.ATMOSPHERE_INTENSITY,
-                side: THREE.BackSide
+                side: THREE.BackSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
             });
             
             atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
             earthGroup.add(atmosphere);
-            
-            // Initial rotation
-            earthGroup.rotation.x = -0.3;
         }
 
-        // ========== CREATE CONTINENTS ==========
-        function createContinents() {
-            const continentGeometry = new THREE.IcosahedronGeometry(CONFIG.EARTH_RADIUS * 0.99, 3);
-            const continentMaterial = new THREE.MeshPhongMaterial({
-                color: CONFIG.LAND_COLOR,
-                transparent: true,
-                opacity: 0.8
+        // ========== CREATE POLAR ICE CAPS ==========
+        function createPolarIceCaps() {
+            const iceGeometry = new THREE.SphereGeometry(
+                CONFIG.EARTH_RADIUS * 0.995,
+                32,
+                32,
+                0,
+                Math.PI * 2,
+                0,
+                Math.PI * 0.15
+            );
+            
+            const iceMaterial = new THREE.MeshPhysicalMaterial({
+                color: CONFIG.POLAR,
+                roughness: 0.2,
+                metalness: 0.1,
+                transmission: 0.3,
+                thickness: 0.5
             });
             
-            // Create 6 major continents
-            const continentPositions = [
-                { x: 2, y: 0.5, z: 1, scale: 0.7 },   // Asia
-                { x: -1.5, y: 0.3, z: 1.2, scale: 0.6 }, // Europe
-                { x: -1.2, y: -0.8, z: -1, scale: 0.8 }, // Africa
-                { x: 1.5, y: -0.5, z: -0.5, scale: 0.6 }, // Australia
-                { x: 0.5, y: 0.2, z: -1.8, scale: 0.9 }, // Americas
-                { x: -0.5, y: 1.5, z: 0.5, scale: 0.5 }   // Arctic
-            ];
+            // North pole
+            const northIce = new THREE.Mesh(iceGeometry, iceMaterial);
+            northIce.rotation.x = Math.PI;
+            earth.add(northIce);
             
-            continentPositions.forEach(pos => {
-                const continent = new THREE.Mesh(continentGeometry, continentMaterial);
-                continent.position.set(pos.x, pos.y, pos.z);
-                continent.scale.setScalar(pos.scale);
-                earth.add(continent);
-            });
-            
-            // Ocean surface
-            const oceanGeometry = new THREE.SphereGeometry(CONFIG.EARTH_RADIUS * 0.995, 96, 96);
-            const oceanMaterial = new THREE.MeshPhongMaterial({
-                color: CONFIG.OCEAN_COLOR,
-                transparent: true,
-                opacity: 0.9,
-                shininess: 100
-            });
-            
-            const ocean = new THREE.Mesh(oceanGeometry, oceanMaterial);
-            earth.add(ocean);
+            // South pole
+            const southIce = new THREE.Mesh(iceGeometry, iceMaterial);
+            earth.add(southIce);
         }
 
-        // ========== CREATE STAR FIELD ==========
-        function createStarField() {
-            const starCount = 2000;
-            const positions = new Float32Array(starCount * 3);
+        // ========== CREATE CITY LIGHTS ==========
+        function createCityLights() {
+            const lightCount = 5000;
+            const positions = new Float32Array(lightCount * 3);
+            const colors = new Float32Array(lightCount * 3);
+            const sizes = new Float32Array(lightCount);
             
-            for (let i = 0; i < starCount * 3; i += 3) {
-                const radius = 100 + Math.random() * 400;
+            for (let i = 0; i < lightCount; i++) {
                 const theta = Math.random() * Math.PI * 2;
                 const phi = Math.acos(2 * Math.random() - 1);
                 
-                positions[i] = radius * Math.sin(phi) * Math.cos(theta);
-                positions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
-                positions[i + 2] = radius * Math.cos(phi);
+                // Bias towards populated areas (30° to 60° latitude)
+                const latBias = (Math.random() - 0.5) * Math.PI / 3;
+                const latitude = Math.PI / 2 - phi + latBias;
+                
+                positions[i * 3] = CONFIG.EARTH_RADIUS * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = CONFIG.EARTH_RADIUS * Math.cos(phi);
+                positions[i * 3 + 2] = CONFIG.EARTH_RADIUS * Math.sin(phi) * Math.sin(theta);
+                
+                // City light colors (yellow/orange)
+                colors[i * 3] = 1.0;
+                colors[i * 3 + 1] = 0.8 + Math.random() * 0.2;
+                colors[i * 3 + 2] = 0.3 + Math.random() * 0.2;
+                
+                sizes[i] = 0.05 + Math.random() * 0.1;
             }
             
             const geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
             
             const material = new THREE.PointsMaterial({
-                size: 0.5,
-                color: 0xffffff,
+                size: 0.1,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending,
                 sizeAttenuation: true
             });
             
-            const stars = new THREE.Points(geometry, material);
-            scene.add(stars);
+            const cityLights = new THREE.Points(geometry, material);
+            earth.add(cityLights);
+            state.earth.cityLights = cityLights;
         }
 
-        // ========== SETUP LIGHTING ==========
-        function setupLighting() {
-            // Sun light
-            const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
-            sunLight.position.set(50, 30, 50);
-            scene.add(sunLight);
+        // ========== CREATE GALAXY BACKGROUND ==========
+        function createGalaxyBackground() {
+            const starCount = 10000;
+            const positions = new Float32Array(starCount * 3);
+            const colors = new Float32Array(starCount * 3);
             
-            // Ambient light
-            const ambientLight = new THREE.AmbientLight(0x224466, 0.3);
+            for (let i = 0; i < starCount; i++) {
+                // Create spiral galaxy pattern
+                const angle = Math.random() * Math.PI * 2;
+                const radius = Math.pow(Math.random(), 2) * 500;
+                const height = (Math.random() - 0.5) * 50;
+                
+                positions[i * 3] = radius * Math.cos(angle);
+                positions[i * 3 + 1] = height;
+                positions[i * 3 + 2] = radius * Math.sin(angle);
+                
+                // Star colors based on temperature
+                const temperature = 3000 + Math.random() * 12000;
+                const color = blackbodyColor(temperature);
+                colors[i * 3] = color.r;
+                colors[i * 3 + 1] = color.g;
+                colors[i * 3 + 2] = color.b;
+            }
+            
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const material = new THREE.PointsMaterial({
+                size: 0.2,
+                vertexColors: true,
+                sizeAttenuation: true,
+                transparent: true
+            });
+            
+            const galaxy = new THREE.Points(geometry, material);
+            scene.add(galaxy);
+        }
+
+        // ========== BLACKBODY COLOR FUNCTION ==========
+        function blackbodyColor(temp) {
+            temp /= 100;
+            
+            let red, green, blue;
+            
+            if (temp <= 66) {
+                red = 255;
+                green = temp;
+                green = 99.4708025861 * Math.log(green) - 161.1195681661;
+            } else {
+                red = temp - 60;
+                red = 329.698727446 * Math.pow(red, -0.1332047592);
+                green = temp - 60;
+                green = 288.1221695283 * Math.pow(green, -0.0755148492);
+            }
+            
+            if (temp >= 66) {
+                blue = 255;
+            } else {
+                if (temp <= 19) {
+                    blue = 0;
+                } else {
+                    blue = temp - 10;
+                    blue = 138.5177312231 * Math.log(blue) - 305.0447927307;
+                }
+            }
+            
+            return {
+                r: Math.min(255, Math.max(0, red)) / 255,
+                g: Math.min(255, Math.max(0, green)) / 255,
+                b: Math.min(255, Math.max(0, blue)) / 255
+            };
+        }
+
+        // ========== SETUP ADVANCED LIGHTING ==========
+        function setupAdvancedLighting() {
+            lightingGroup = new THREE.Group();
+            scene.add(lightingGroup);
+            
+            // Main sun (directional light)
+            const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
+            sunLight.position.set(100, 50, 100);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.far = 200;
+            sunLight.shadow.bias = -0.001;
+            lightingGroup.add(sunLight);
+            state.lighting.sun = sunLight;
+            
+            // Fill light
+            const fillLight = new THREE.DirectionalLight(0x4466ff, 0.3);
+            fillLight.position.set(-50, -30, -50);
+            lightingGroup.add(fillLight);
+            
+            // Ambient light for global illumination
+            const ambientLight = new THREE.AmbientLight(0x223366, 0.1);
             scene.add(ambientLight);
             
-            // Earth glow
-            const pointLight = new THREE.PointLight(0x00aaff, 0.3, 100);
-            pointLight.position.set(0, 0, 0);
-            scene.add(pointLight);
+            // Earth glow (point light at center)
+            const earthGlow = new THREE.PointLight(0x00aaff, 0.5, 100);
+            earthGlow.position.set(0, 0, 0);
+            scene.add(earthGlow);
         }
 
-        // ========== CAMERA INITIALIZATION ==========
-        async function initCamera() {
+        // ========== INIT POST-PROCESSING ==========
+        function initPostProcessing() {
+            // This would require importing EffectComposer, RenderPass, etc.
+            // For simplicity, we'll skip for now but leave structure
+            console.log("Post-processing available");
+        }
+
+        // ========== CAMERA SYSTEM ==========
+        async function initCameraSystem() {
             try {
                 videoElement = document.createElement('video');
                 videoElement.style.display = 'none';
@@ -494,13 +1007,13 @@
                     };
                 });
             } catch (error) {
-                console.warn("Camera initialization failed:", error);
+                console.warn("Camera system error:", error);
                 return false;
             }
         }
 
         // ========== HAND TRACKING ==========
-        async function startHandTracking() {
+        async function initHandTracking() {
             try {
                 const hands = new Hands({
                     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
@@ -509,8 +1022,8 @@
                 hands.setOptions({
                     maxNumHands: 1,
                     modelComplexity: 1,
-                    minDetectionConfidence: 0.6,
-                    minTrackingConfidence: 0.6
+                    minDetectionConfidence: 0.7,
+                    minTrackingConfidence: 0.7
                 });
                 
                 hands.onResults((results) => {
@@ -522,7 +1035,7 @@
                         try {
                             await hands.send({image: videoElement});
                         } catch (e) {
-                            if (SYSTEM.debug) console.warn("Tracking frame skipped");
+                            // Silent fail for frame skipping
                         }
                     },
                     width: 640,
@@ -544,45 +1057,55 @@
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const landmarks = results.multiHandLandmarks[0];
                 
-                // Calculate palm center
-                let sumX = 0, sumY = 0;
-                const palmPoints = [0, 1, 5, 9, 13, 17];
+                // Calculate palm center using weighted average
+                const weights = [1, 0.8, 0.6, 0.4, 0.2];
+                let totalX = 0, totalY = 0, totalWeight = 0;
                 
-                palmPoints.forEach(idx => {
-                    sumX += landmarks[idx].x;
-                    sumY += landmarks[idx].y;
-                });
+                for (let i = 0; i < 5; i++) {
+                    const idx = i * 4;
+                    totalX += landmarks[idx].x * weights[i];
+                    totalY += landmarks[idx].y * weights[i];
+                    totalWeight += weights[i];
+                }
                 
-                const newX = sumX / palmPoints.length;
-                const newY = sumY / palmPoints.length;
+                const newX = totalX / totalWeight;
+                const newY = totalY / totalWeight;
                 
-                // Update position and velocity
-                state.hand.velocity.x = newX - state.hand.position.x;
-                state.hand.velocity.y = newY - state.hand.position.y;
+                // Calculate velocity and acceleration
+                const deltaX = newX - state.hand.position.x;
+                const deltaY = newY - state.hand.position.y;
                 
+                state.hand.acceleration.x = deltaX - state.hand.velocity.x;
+                state.hand.acceleration.y = deltaY - state.hand.velocity.y;
+                state.hand.velocity.x = deltaX;
+                state.hand.velocity.y = deltaY;
                 state.hand.position.x = newX;
                 state.hand.position.y = newY;
                 
-                // Smooth position with velocity prediction
+                // Apply smoothing with velocity prediction
                 const smoothing = CONFIG.HAND_SMOOTHING;
-                state.hand.smoothed.x += (state.hand.position.x + state.hand.velocity.x * CONFIG.VELOCITY_WEIGHT - state.hand.smoothed.x) * smoothing;
-                state.hand.smoothed.y += (state.hand.position.y + state.hand.velocity.y * CONFIG.VELOCITY_WEIGHT - state.hand.smoothed.y) * smoothing;
+                const predX = state.hand.velocity.x * CONFIG.VELOCITY_PREDICTION;
+                const predY = state.hand.velocity.y * CONFIG.VELOCITY_PREDICTION;
+                
+                state.hand.smoothed.x += (state.hand.position.x + predX - state.hand.smoothed.x) * smoothing;
+                state.hand.smoothed.y += (state.hand.position.y + predY - state.hand.smoothed.y) * smoothing;
                 
                 // Detect gestures
-                detectGestures(landmarks);
+                detectAdvancedGestures(landmarks);
                 
                 state.hand.detected = true;
-                state.hand.confidence = Math.min(1, state.hand.confidence + 0.1);
+                state.hand.confidence = Math.min(1, state.hand.confidence + 0.15);
                 updateStatus('hand', true, "DETECTED");
+                
             } else {
                 state.hand.detected = false;
-                state.hand.confidence = Math.max(0, state.hand.confidence - 0.05);
-                updateStatus('hand', false, "NO HAND");
+                state.hand.confidence = Math.max(0, state.hand.confidence - 0.1);
+                updateStatus('hand', false, "SEARCHING");
             }
         }
 
-        // ========== DETECT GESTURES ==========
-        function detectGestures(landmarks) {
+        // ========== DETECT ADVANCED GESTURES ==========
+        function detectAdvancedGestures(landmarks) {
             const thumb = landmarks[4];
             const index = landmarks[8];
             const middle = landmarks[12];
@@ -592,64 +1115,128 @@
             
             // Calculate distances
             const thumbIndexDist = Math.hypot(thumb.x - index.x, thumb.y - index.y);
+            const indexMiddleDist = Math.hypot(index.x - middle.x, index.y - middle.y);
             
-            // Check fist (all fingers close to wrist)
+            // Check fist (all fingers close to palm)
             let fingersClose = true;
+            let avgFingerDist = 0;
             for (let i = 8; i <= 20; i += 4) {
                 const dist = Math.hypot(landmarks[i].x - wrist.x, landmarks[i].y - wrist.y);
+                avgFingerDist += dist;
                 if (dist > 0.18) {
                     fingersClose = false;
-                    break;
                 }
             }
+            avgFingerDist /= 4;
             
-            state.hand.gestures.fist = fingersClose;
-            state.hand.gestures.open = !fingersClose && thumbIndexDist > 0.12;
-            state.hand.gestures.pinch = thumbIndexDist < 0.06;
+            // Gesture with confidence
+            state.hand.gestures.fist = {
+                active: fingersClose,
+                confidence: Math.max(0, 1 - (avgFingerDist / 0.18))
+            };
+            
+            state.hand.gestures.open = {
+                active: !fingersClose && thumbIndexDist > 0.15,
+                confidence: thumbIndexDist / 0.3
+            };
+            
+            state.hand.gestures.pinch = {
+                active: thumbIndexDist < 0.05,
+                confidence: Math.max(0, 1 - (thumbIndexDist / 0.05))
+            };
+            
+            // Two fingers gesture
+            const twoFingers = thumbIndexDist < 0.08 && indexMiddleDist > 0.12 && !fingersClose;
+            state.hand.gestures.twoFingers = {
+                active: twoFingers,
+                confidence: twoFingers ? 0.9 : 0
+            };
+            
+            // Thumb up gesture
+            const thumbDist = Math.hypot(thumb.x - wrist.x, thumb.y - wrist.y);
+            const otherFingersClosed = 
+                Math.hypot(index.x - wrist.x, index.y - wrist.y) < 0.15 &&
+                Math.hypot(middle.x - wrist.x, middle.y - wrist.y) < 0.15 &&
+                Math.hypot(ring.x - wrist.x, ring.y - wrist.y) < 0.15 &&
+                Math.hypot(pinky.x - wrist.x, pinky.y - wrist.y) < 0.15;
+            
+            state.hand.gestures.thumbUp = {
+                active: thumbDist > 0.2 && otherFingersClosed,
+                confidence: thumbDist / 0.4
+            };
         }
 
         // ========== UPDATE EARTH CONTROL ==========
         function updateEarthControl(deltaTime) {
+            // Update time-based animations
+            state.earth.atmospherePulse += deltaTime;
+            state.earth.oceanWaves += deltaTime * 0.5;
+            
             // Auto-rotation when no hand
             if (!state.hand.detected || state.hand.confidence < 0.3) {
-                earthGroup.rotation.y += 0.001;
+                earthGroup.rotation.y += state.earth.autoRotation;
                 state.hand.inertia.x *= CONFIG.INERTIA_DECAY;
                 state.hand.inertia.y *= CONFIG.INERTIA_DECAY;
+                state.hand.inertia.z *= CONFIG.INERTIA_DECAY;
+                
+                // Update info panel
+                updateInfoPanel();
                 return;
             }
             
-            // Calculate normalized hand movement
+            // Calculate normalized hand input
             const moveX = (state.hand.smoothed.x - 0.5) * 2;
             const moveY = (state.hand.smoothed.y - 0.5) * 2;
             
             // Apply deadzone
-            const deadzone = 0.05;
+            const deadzone = 0.08;
             const inputX = Math.abs(moveX) > deadzone ? moveX : 0;
             const inputY = Math.abs(moveY) > deadzone ? moveY : 0;
             
-            // ROTATION CONTROL
-            if (state.hand.gestures.open) {
-                state.hand.inertia.x += inputY * CONFIG.ROTATION_SENSITIVITY * deltaTime;
-                state.hand.inertia.y += -inputX * CONFIG.ROTATION_SENSITIVITY * deltaTime;
+            // ROTATION CONTROL with acceleration
+            if (state.hand.gestures.open.active && state.hand.gestures.open.confidence > 0.7) {
+                const rotationForce = CONFIG.ROTATION_SENSITIVITY * deltaTime;
+                const accelerationFactor = 1 + Math.abs(state.hand.acceleration.x + state.hand.acceleration.y) * 2;
+                
+                state.hand.inertia.x += inputY * rotationForce * accelerationFactor;
+                state.hand.inertia.y += -inputX * rotationForce * accelerationFactor;
             }
             
-            // ZOOM CONTROL
-            if (state.hand.gestures.fist) {
+            // ZOOM CONTROL with different gestures
+            if (state.hand.gestures.fist.active && state.hand.gestures.fist.confidence > 0.7) {
+                // Fist = zoom out
                 state.hand.inertia.z -= CONFIG.ZOOM_SENSITIVITY * deltaTime;
-            } else if (state.hand.gestures.pinch) {
-                state.hand.inertia.z += CONFIG.ZOOM_SENSITIVITY * deltaTime;
+            } else if (state.hand.gestures.pinch.active && state.hand.gestures.pinch.confidence > 0.7) {
+                // Pinch = zoom in
+                state.hand.inertia.z += CONFIG.ZOOM_SENSITIVITY * deltaTime * 2;
+            } else if (state.hand.gestures.thumbUp.active && state.hand.gestures.thumbUp.confidence > 0.7) {
+                // Thumb up = reset zoom
+                state.hand.inertia.z = (CONFIG.CAMERA_DISTANCE - state.camera.distance) * 0.1;
             }
             
-            // Apply inertia decay
+            // TWO FINGERS = toggle view mode
+            if (state.hand.gestures.twoFingers.active && state.hand.gestures.twoFingers.confidence > 0.7) {
+                if (!state.hand.lastTwoFingers) {
+                    toggleViewMode();
+                }
+                state.hand.lastTwoFingers = true;
+            } else {
+                state.hand.lastTwoFingers = false;
+            }
+            
+            // Apply inertia with bounce damping
             state.hand.inertia.x *= CONFIG.INERTIA_DECAY;
             state.hand.inertia.y *= CONFIG.INERTIA_DECAY;
             state.hand.inertia.z *= CONFIG.INERTIA_DECAY;
             
-            // Apply rotation to Earth
+            // Apply rotation to Earth (with smooth limits)
             earthGroup.rotation.x += state.hand.inertia.x;
             earthGroup.rotation.y += state.hand.inertia.y;
             
-            // Apply zoom to camera
+            // Limit rotation to prevent flipping
+            earthGroup.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, earthGroup.rotation.x));
+            
+            // Apply zoom to camera with smooth limits
             state.camera.targetDistance += state.hand.inertia.z;
             state.camera.targetDistance = Math.max(
                 CONFIG.CAMERA_MIN,
@@ -660,16 +1247,117 @@
             state.camera.distance += (state.camera.targetDistance - state.camera.distance) * CONFIG.CAMERA_SMOOTH;
             camera.position.z = state.camera.distance;
             
-            // Rotate clouds (slightly different speed)
-            clouds.rotation.y += deltaTime * 0.0002;
+            // Rotate clouds (different speed for realism)
+            clouds.rotation.y += state.earth.cloudsRotation;
+            
+            // Update ocean waves animation
+            if (state.earth.oceanMesh) {
+                state.earth.oceanMesh.material.opacity = 0.9 + Math.sin(state.earth.oceanWaves) * 0.1;
+            }
+            
+            // Update atmosphere pulse
+            if (atmosphere.material.uniforms) {
+                atmosphere.material.uniforms.time.value = state.earth.atmospherePulse;
+            }
+            
+            // Update city lights visibility based on rotation
+            if (state.earth.cityLights) {
+                const sunAngle = Math.atan2(state.lighting.sun.position.x, state.lighting.sun.position.z);
+                const earthAngle = earthGroup.rotation.y;
+                const relativeAngle = (earthAngle - sunAngle + Math.PI) % (Math.PI * 2);
+                const nightSide = relativeAngle > Math.PI * 0.5 && relativeAngle < Math.PI * 1.5;
+                
+                state.earth.cityLights.visible = nightSide;
+                state.earth.cityLights.material.opacity = nightSide ? 0.8 : 0;
+            }
+            
+            // Update lighting based on Earth rotation
+            updateLighting(deltaTime);
+            
+            // Update info panel
+            updateInfoPanel();
+        }
+
+        // ========== TOGGLE VIEW MODE ==========
+        function toggleViewMode() {
+            const modes = ['DAY', 'NIGHT', 'TERRAIN', 'POLITICAL'];
+            const currentIndex = modes.indexOf(state.earth.viewMode || 'DAY');
+            state.earth.viewMode = modes[(currentIndex + 1) % modes.length];
+            
+            // Update visual effects based on mode
+            switch(state.earth.viewMode) {
+                case 'DAY':
+                    scene.background = new THREE.Color(0x000000);
+                    state.lighting.sun.intensity = 2.0;
+                    break;
+                case 'NIGHT':
+                    scene.background = new THREE.Color(0x001122);
+                    state.lighting.sun.intensity = 0.5;
+                    break;
+                case 'TERRAIN':
+                    scene.background = new THREE.Color(0x000000);
+                    state.lighting.sun.intensity = 1.5;
+                    break;
+                case 'POLITICAL':
+                    scene.background = new THREE.Color(0x000000);
+                    state.lighting.sun.intensity = 2.0;
+                    break;
+            }
+            
+            document.getElementById('viewMode').textContent = state.earth.viewMode;
+        }
+
+        // ========== UPDATE LIGHTING ==========
+        function updateLighting(deltaTime) {
+            // Animate sun position for day/night cycle
+            if (state.hand.detected) {
+                // Static lighting during interaction
+                return;
+            }
+            
+            // Auto-rotate sun for demo mode
+            const time = performance.now() * 0.0001;
+            state.lighting.sun.position.x = Math.cos(time) * 100;
+            state.lighting.sun.position.z = Math.sin(time) * 100;
+            
+            // Update shadow camera
+            state.lighting.sun.shadow.camera.updateProjectionMatrix();
+        }
+
+        // ========== UPDATE INFO PANEL ==========
+        function updateInfoPanel() {
+            // Rotation value
+            const rotationDeg = ((earthGroup.rotation.y * 180 / Math.PI) % 360).toFixed(1);
+            document.getElementById('rotationValue').textContent = `${rotationDeg}°`;
+            
+            // Zoom value
+            const zoomLevel = (CONFIG.CAMERA_DISTANCE / state.camera.distance).toFixed(2);
+            document.getElementById('zoomValue').textContent = `${zoomLevel}x`;
+            
+            // Performance
+            let perf = "OPTIMAL";
+            if (state.graphics.fps < 30) perf = "POOR";
+            else if (state.graphics.fps < 50) perf = "FAIR";
+            else if (state.graphics.fps < 60) perf = "GOOD";
+            document.getElementById('perfValue').textContent = perf;
         }
 
         // ========== DEMO MODE ==========
         function startDemoMode() {
             setInterval(() => {
                 if (!state.hand.detected) {
-                    earthGroup.rotation.y += 0.0015;
-                    camera.position.z = 18 + Math.sin(Date.now() * 0.001) * 3;
+                    earthGroup.rotation.y += 0.001;
+                    clouds.rotation.y += 0.0003;
+                    
+                    // Gentle camera movement
+                    const time = performance.now() * 0.001;
+                    camera.position.z = CONFIG.CAMERA_DISTANCE + Math.sin(time * 0.1) * 3;
+                    
+                    // Animate atmosphere
+                    state.earth.atmospherePulse += 0.016;
+                    if (atmosphere.material.uniforms) {
+                        atmosphere.material.uniforms.time.value = state.earth.atmospherePulse;
+                    }
                 }
             }, 16);
         }
@@ -679,19 +1367,13 @@
             const dot = document.getElementById(`${type}Status`);
             const textEl = document.getElementById(`${type}Text`);
             
-            if (dot) {
-                dot.classList.toggle('active', active);
-            }
-            if (textEl) {
-                textEl.textContent = text;
-            }
+            if (dot) dot.classList.toggle('active', active);
+            if (textEl) textEl.textContent = text;
         }
 
         function updateLoader(text) {
             const loaderText = document.getElementById('loaderText');
-            if (loaderText) {
-                loaderText.textContent = text;
-            }
+            if (loaderText) loaderText.textContent = text;
         }
 
         function hideLoader() {
@@ -708,25 +1390,19 @@
         function updatePerformance(now) {
             state.system.frameCount++;
             
-            if (now >= state.system.lastFPSUpdate + 1000) {
-                state.system.fps = Math.round((state.system.frameCount * 1000) / (now - state.system.lastFPSUpdate));
+            if (now >= state.system.lastUpdate + 1000) {
+                state.graphics.fps = Math.round((state.system.frameCount * 1000) / (now - state.system.lastUpdate));
                 
-                const fpsElement = document.getElementById('fpsCounter');
-                if (fpsElement) {
-                    fpsElement.textContent = `${state.system.fps} FPS`;
-                    
-                    // Color coding based on performance
-                    if (state.system.fps >= 55) {
-                        fpsElement.style.color = '#00ff88';
-                    } else if (state.system.fps >= 30) {
-                        fpsElement.style.color = '#ffaa00';
-                    } else {
-                        fpsElement.style.color = '#ff4444';
+                // Adaptive quality adjustment
+                if (CONFIG.ADAPTIVE_QUALITY && state.graphics.fps < 45) {
+                    if (state.graphics.quality === "ULTRA") {
+                        state.graphics.quality = "HIGH";
+                        console.log("Quality adjusted: HIGH");
                     }
                 }
                 
                 state.system.frameCount = 0;
-                state.system.lastFPSUpdate = now;
+                state.system.lastUpdate = now;
             }
         }
 
@@ -736,40 +1412,84 @@
             
             // Calculate delta time
             const deltaTime = Math.min(
-                (currentTime - state.system.lastFrameTime) / 1000,
+                clock.getDelta(),
                 CONFIG.MAX_DELTA_TIME
             );
-            state.system.lastFrameTime = currentTime;
+            state.graphics.frameTime = deltaTime * 1000;
             
             // Update Earth control
-            updateEarthControl(deltaTime);
+            if (state.system.isReady) {
+                updateEarthControl(deltaTime);
+            }
             
             // Update camera look
             camera.lookAt(0, 0, 0);
             
-            // Update atmosphere color
-            if (atmosphere.material) {
-                const time = currentTime * 0.001;
-                atmosphere.material.opacity = CONFIG.ATMOSPHERE_INTENSITY + Math.sin(time) * 0.05;
+            // Update lighting group to follow camera
+            if (lightingGroup) {
+                lightingGroup.position.copy(camera.position);
+                lightingGroup.lookAt(0, 0, 0);
             }
             
             // Update performance
             updatePerformance(currentTime);
             
-            // Render
-            renderer.render(scene, camera);
+            // Render scene
+            if (composer) {
+                composer.render();
+            } else {
+                renderer.render(scene, camera);
+            }
         }
 
-        // ========== WINDOW RESIZE HANDLER ==========
+        // ========== EVENT LISTENERS ==========
+        function setupEventListeners() {
+            window.addEventListener('resize', onWindowResize, { passive: true });
+            
+            // Mouse fallback for testing
+            document.addEventListener('mousedown', (e) => {
+                if (!state.hand.detected) {
+                    state.hand.detected = true;
+                    updateStatus('hand', true, "MOUSE");
+                }
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (state.hand.detected) {
+                    const x = e.clientX / window.innerWidth;
+                    const y = e.clientY / window.innerHeight;
+                    
+                    state.hand.position.x = x;
+                    state.hand.position.y = y;
+                    state.hand.smoothed.x = x;
+                    state.hand.smoothed.y = y;
+                }
+            });
+            
+            document.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                state.hand.inertia.z += e.deltaY * 0.001;
+                if (!state.hand.detected) {
+                    state.hand.detected = true;
+                    updateStatus('hand', true, "MOUSE");
+                }
+            });
+        }
+
         function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            if (composer) {
+                composer.setSize(window.innerWidth, window.innerHeight);
+            }
         }
 
         // ========== INITIALIZE ON LOAD ==========
         window.addEventListener('load', () => {
-            console.log(`🚀 ${SYSTEM.author} - ${SYSTEM.version} Loading...`);
+            console.log(`🚀 ${EARTH_SYSTEM.author} - ${EARTH_SYSTEM.version} Loading...`);
+            console.log(`Graphics: ${EARTH_SYSTEM.graphics.quality}`);
             init();
         });
     </script>
