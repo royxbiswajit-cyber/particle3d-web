@@ -1,40 +1,199 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Hand Control</title>
+    <title>✨ Biswajit Roy - Hand Particle System</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            margin: 0; 
             overflow: hidden; 
-            background: #000; 
+            background: #0a0a14;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         canvas { 
             display: block; 
+        }
+        
+        /* Branding Styles */
+        .brand-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            text-align: center;
+            pointer-events: none;
+        }
+        
+        .brand-name {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            text-shadow: 0 0 20px rgba(100, 200, 255, 0.7);
+        }
+        
+        .brand-title {
+            color: rgba(200, 220, 255, 0.7);
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 3px;
+        }
+        
+        .watermark {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 11px;
+            letter-spacing: 1px;
+            z-index: 1000;
+        }
+        
+        /* Subtle UI Elements */
+        .status-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4444;
+        }
+        
+        .status-dot.active {
+            background: #44ff44;
+            box-shadow: 0 0 10px #44ff44;
+        }
+        
+        /* Gesture Guide */
+        .gesture-guide {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            max-width: 200px;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+        
+        .gesture-guide:hover {
+            opacity: 0.9;
+        }
+        
+        .gesture-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+        }
+        
+        .gesture-emoji {
+            font-size: 20px;
+            width: 30px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <canvas id="canvas"></canvas>
+    
+    <!-- Branding -->
+    <div class="brand-container">
+        <div class="brand-name">Biswajit Roy</div>
+        <div class="brand-title">HAND PARTICLE SYSTEM</div>
+    </div>
+    
+    <!-- Watermark -->
+    <div class="watermark">BR-HPS v1.0</div>
+    
+    <!-- Status -->
+    <div class="status-indicator">
+        <div class="status-item">
+            <div class="status-dot" id="cameraStatus"></div>
+            <span>CAMERA</span>
+        </div>
+        <div class="status-item">
+            <div class="status-dot" id="handStatus"></div>
+            <span>HAND</span>
+        </div>
+        <div class="status-item">
+            <div class="status-dot" id="particleStatus"></div>
+            <span>PARTICLES</span>
+        </div>
+    </div>
+    
+    <!-- Gesture Guide -->
+    <div class="gesture-guide">
+        <div class="gesture-item">
+            <div class="gesture-emoji">🖐️</div>
+            <div>Open Hand → Big Particles</div>
+        </div>
+        <div class="gesture-item">
+            <div class="gesture-emoji">✊</div>
+            <div>Fist → Small Particles</div>
+        </div>
+        <div class="gesture-item">
+            <div class="gesture-emoji">✌️</div>
+            <div>Two Fingers → Change Color</div>
+        </div>
+        <div class="gesture-item">
+            <div class="gesture-emoji">👋</div>
+            <div>Move Hand → Control Flow</div>
+        </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
     <script>
-        // ========== CONFIG ==========
+        // ========== BISWAJIT ROY PARTICLE SYSTEM ==========
+        const BRSystem = {
+            version: "1.0",
+            author: "Biswajit Roy",
+            created: new Date().toISOString().split('T')[0]
+        };
+
+        console.log(`🚀 ${BRSystem.author} - ${BRSystem.version} | ${BRSystem.created}`);
+
+        // ========== CONFIGURATION ==========
         const CONFIG = {
-            PARTICLE_COUNT: 12000,
+            PARTICLE_COUNT: 10000,
             PARTICLE_SIZE: 0.02,
-            BASE_SIZE: 0.02,
             MIN_SIZE: 0.005,
-            MAX_SIZE: 0.08,
-            COLOR_SPEED: 0.02,
-            SMOOTHING: 0.1,
-            ORBIT_SPEED: 0.5,
-            SWIRL_INTENSITY: 0.3,
-            PULSE_INTENSITY: 0.2
+            MAX_SIZE: 0.06,
+            SMOOTHING: 0.12,
+            ATTRACTION_FORCE: 0.05,
+            ORBIT_SPEED: 0.3,
+            SWIRL_INTENSITY: 0.4,
+            COLOR_CHANGE_SPEED: 0.5,
+            FRICTION: 0.93,
+            BOUNDARY: 35
         };
 
         // ========== STATE ==========
@@ -45,70 +204,111 @@
             detected: false,
             position: { x: 0.5, y: 0.5 },
             smooth: { x: 0.5, y: 0.5 },
-            size: 1.0,
-            lastSize: 1.0,
-            orbitAngle: 0,
-            orbitRadius: 0,
-            pulse: 0,
-            colorIndex: 0,
-            twoFingers: false,
+            lastPos: { x: 0.5, y: 0.5 },
+            velocity: { x: 0, y: 0 },
             fist: false,
-            palmOpen: true
+            palmOpen: true,
+            twoFingers: false,
+            lastTwoFingers: false,
+            size: 1.0,
+            orbitAngle: 0
         };
         let video;
         let time = 0;
-        let colorPalettes = [
-            [[1.0, 0.5, 0.3], [0.3, 0.8, 1.0], [0.7, 0.3, 1.0]], // Warm
-            [[0.2, 1.0, 0.6], [1.0, 0.3, 0.8], [0.4, 0.6, 1.0]], // Neon
-            [[0.9, 0.9, 0.2], [0.2, 0.9, 0.9], [0.9, 0.2, 0.9]], // Bright
-            [[0.4, 1.0, 0.7], [1.0, 0.4, 0.4], [0.7, 0.4, 1.0]]  // Pastel
+        let colorThemeIndex = 0;
+        
+        // Subtle color themes
+        const colorThemes = [
+            {
+                name: "Ocean",
+                colors: [[0.3, 0.6, 0.9], [0.2, 0.8, 0.9], [0.4, 0.7, 1.0]]
+            },
+            {
+                name: "Forest",
+                colors: [[0.3, 0.8, 0.5], [0.4, 0.9, 0.6], [0.5, 0.7, 0.4]]
+            },
+            {
+                name: "Sunset",
+                colors: [[0.9, 0.5, 0.3], [0.9, 0.7, 0.4], [1.0, 0.6, 0.3]]
+            },
+            {
+                name: "Lavender",
+                colors: [[0.7, 0.5, 0.9], [0.8, 0.6, 1.0], [0.6, 0.4, 0.8]]
+            },
+            {
+                name: "Coral",
+                colors: [[0.9, 0.4, 0.5], [1.0, 0.5, 0.6], [0.8, 0.3, 0.4]]
+            }
         ];
 
-        // ========== THREE.JS INIT ==========
+        // ========== INIT THREE.JS ==========
         function initThreeJS() {
+            // Scene with subtle fog
             scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x0a0a14, 0.01);
             
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            // Camera
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 0, 30);
             
+            // Renderer with enhanced quality
             renderer = new THREE.WebGLRenderer({ 
                 canvas: document.getElementById('canvas'), 
                 antialias: true,
-                alpha: true
+                alpha: true,
+                powerPreference: "high-performance"
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.setClearColor(0x000000);
+            renderer.setClearColor(0x0a0a14);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
             
-            createParticles();
-            createLights();
+            // Create particles
+            createParticleField();
+            
+            // Setup lighting
+            setupLighting();
+            
+            updateStatus('particles', true);
         }
 
-        // ========== CREATE PARTICLES ==========
-        function createParticles() {
+        // ========== CREATE PARTICLE FIELD ==========
+        function createParticleField() {
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(CONFIG.PARTICLE_COUNT * 3);
             const colors = new Float32Array(CONFIG.PARTICLE_COUNT * 3);
             const sizes = new Float32Array(CONFIG.PARTICLE_COUNT);
             
+            // Create a beautiful particle cloud formation
             for (let i = 0; i < CONFIG.PARTICLE_COUNT; i++) {
                 const i3 = i * 3;
                 
-                // Create spiral galaxy formation
+                // Create a nebula-like distribution
                 const angle = Math.random() * Math.PI * 2;
-                const radius = Math.pow(Math.random(), 2) * 25;
-                const height = (Math.random() - 0.5) * 5;
+                const radius = Math.pow(Math.random(), 1.5) * 30;
+                const height = (Math.random() - 0.5) * 8;
                 
-                positions[i3] = Math.cos(angle) * radius;
-                positions[i3 + 1] = Math.sin(angle) * radius * 0.2 + height;
-                positions[i3 + 2] = Math.sin(angle) * radius;
+                // Spiral galaxy formation
+                const spiralFactor = Math.random() * 0.5;
+                positions[i3] = Math.cos(angle + spiralFactor) * radius;
+                positions[i3 + 1] = Math.sin(angle * 0.7) * radius * 0.2 + height;
+                positions[i3 + 2] = Math.sin(angle + spiralFactor) * radius;
                 
-                // Subtle colors (not harsh on eyes)
-                colors[i3] = 0.3 + 0.3 * Math.sin(radius * 0.1);
-                colors[i3 + 1] = 0.3 + 0.3 * Math.cos(radius * 0.1 + 2);
-                colors[i3 + 2] = 0.4 + 0.3 * Math.sin(radius * 0.1 + 4);
+                // Add some randomness for natural look
+                positions[i3] += (Math.random() - 0.5) * 3;
+                positions[i3 + 1] += (Math.random() - 0.5) * 3;
+                positions[i3 + 2] += (Math.random() - 0.5) * 3;
                 
-                sizes[i] = CONFIG.BASE_SIZE * (0.7 + Math.random() * 0.6);
+                // Initial soft colors
+                const theme = colorThemes[colorThemeIndex];
+                const color = theme.colors[i % 3];
+                
+                colors[i3] = color[0] * (0.7 + 0.3 * Math.random());
+                colors[i3 + 1] = color[1] * (0.7 + 0.3 * Math.random());
+                colors[i3 + 2] = color[2] * (0.7 + 0.3 * Math.random());
+                
+                sizes[i] = CONFIG.PARTICLE_SIZE * (0.5 + Math.random() * 1.0);
                 
                 particles.push({
                     x: positions[i3],
@@ -118,12 +318,13 @@
                     originalY: positions[i3 + 1],
                     originalZ: positions[i3 + 2],
                     vx: 0, vy: 0, vz: 0,
-                    orbitRadius: radius * 0.3,
-                    orbitSpeed: 0.5 + Math.random(),
+                    orbitRadius: radius * 0.2,
+                    orbitSpeed: 0.3 + Math.random() * 0.7,
                     orbitAngle: Math.random() * Math.PI * 2,
                     size: sizes[i],
-                    colorOffset: Math.random() * Math.PI * 2,
-                    group: Math.floor(Math.random() * 3)
+                    colorPhase: Math.random() * Math.PI * 2,
+                    colorGroup: i % 3,
+                    noiseOffset: Math.random() * 1000
                 });
             }
             
@@ -145,47 +346,75 @@
             scene.add(particleSystem);
         }
 
-        // ========== CREATE LIGHTS ==========
-        function createLights() {
-            const ambient = new THREE.AmbientLight(0xffffff, 0.15);
-            scene.add(ambient);
+        // ========== SETUP LIGHTING ==========
+        function setupLighting() {
+            // Ambient light for base illumination
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+            scene.add(ambientLight);
             
-            const pointLight = new THREE.PointLight(0xffffff, 0.8, 100);
-            pointLight.position.set(10, 10, 20);
-            scene.add(pointLight);
+            // Main directional light
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            mainLight.position.set(10, 10, 20);
+            scene.add(mainLight);
+            
+            // Accent light for particles
+            const accentLight = new THREE.PointLight(0x4466ff, 0.5, 50);
+            accentLight.position.set(-10, 5, 15);
+            scene.add(accentLight);
+            
+            // Hand following light
+            const handLight = new THREE.PointLight(0x44aaff, 0.6, 40);
+            handLight.position.set(0, 0, 10);
+            scene.add(handLight);
+            window.handLight = handLight;
         }
 
-        // ========== UPDATE PARTICLES ==========
+        // ========== UPDATE PARTICLE SYSTEM ==========
         function updateParticles(deltaTime) {
             if (!particleSystem) return;
             
+            time += deltaTime;
             const positions = particleSystem.geometry.attributes.position.array;
             const colors = particleSystem.geometry.attributes.color.array;
             const sizes = particleSystem.geometry.attributes.size.array;
             
-            // Update time
-            time += deltaTime;
+            // Calculate hand position in 3D space
+            const handX = (hand.smooth.x - 0.5) * 40;
+            const handY = (0.5 - hand.smooth.y) * 30;
             
-            // Hand position in 3D space
-            const hand3D = {
-                x: (hand.smooth.x - 0.5) * 40,
-                y: (0.5 - hand.smooth.y) * 30,
-                z: 0
-            };
-            
-            // Update hand states
+            // Update hand orbit angle
             hand.orbitAngle += CONFIG.ORBIT_SPEED * deltaTime;
-            hand.pulse = Math.sin(time * 3) * CONFIG.PULSE_INTENSITY;
             
-            // Particle size based on hand gesture
-            let targetSize = CONFIG.BASE_SIZE;
-            if (hand.fist) {
-                targetSize = CONFIG.MIN_SIZE; // মুঠো করলে ছোট
-            } else if (hand.palmOpen) {
-                targetSize = CONFIG.MAX_SIZE; // হাত খুললে বড়
+            // Update hand light
+            if (window.handLight) {
+                window.handLight.position.set(handX, handY, 5);
+                
+                // Change light color based on gesture
+                if (hand.twoFingers) {
+                    const theme = colorThemes[colorThemeIndex];
+                    window.handLight.color.setRGB(
+                        theme.colors[0][0],
+                        theme.colors[0][1],
+                        theme.colors[0][2]
+                    );
+                } else {
+                    window.handLight.color.setRGB(0.27, 0.67, 1.0);
+                }
             }
             
-            hand.size += (targetSize - hand.size) * 0.1;
+            // Determine particle size based on hand gesture
+            let targetParticleSize = CONFIG.PARTICLE_SIZE;
+            if (hand.fist) {
+                targetParticleSize = CONFIG.MIN_SIZE;
+            } else if (hand.palmOpen && !hand.twoFingers) {
+                targetParticleSize = CONFIG.MAX_SIZE;
+            }
+            
+            // Smooth size transition
+            particleSystem.material.size += (targetParticleSize - particleSystem.material.size) * 0.1;
+            
+            // Current color theme
+            const currentTheme = colorThemes[colorThemeIndex];
             
             // Update each particle
             for (let i = 0; i < particles.length; i++) {
@@ -193,83 +422,80 @@
                 const i3 = i * 3;
                 
                 // Apply friction
-                p.vx *= 0.94;
-                p.vy *= 0.94;
-                p.vz *= 0.94;
+                p.vx *= CONFIG.FRICTION;
+                p.vy *= CONFIG.FRICTION;
+                p.vz *= CONFIG.FRICTION;
                 
                 if (hand.detected) {
-                    // Distance to hand
-                    const dx = hand3D.x - p.x;
-                    const dy = hand3D.y - p.y;
-                    const dz = hand3D.z - p.z;
-                    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz) + 0.1;
+                    // Calculate distance to hand
+                    const dx = handX - p.x;
+                    const dy = handY - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy) + 0.1;
                     
-                    // 1. BASIC ATTRACTION to hand
-                    const attraction = 0.06 * (hand.palmOpen ? 1.5 : 0.5);
+                    // 1. Attraction to hand
+                    const attraction = CONFIG.ATTRACTION_FORCE * (hand.palmOpen ? 1.2 : 0.8);
                     p.vx += dx / dist * attraction;
                     p.vy += dy / dist * attraction;
-                    p.vz += dz / dist * attraction;
                     
-                    // 2. ORBITAL MOTION around hand
-                    if (dist < 20) {
-                        const orbitStrength = Math.max(0, 1 - dist/20) * CONFIG.SWIRL_INTENSITY;
-                        p.vx += Math.cos(p.orbitAngle) * p.orbitRadius * orbitStrength * 0.1;
-                        p.vy += Math.sin(p.orbitAngle) * p.orbitRadius * orbitStrength * 0.1;
-                        p.vz += Math.sin(p.orbitAngle + time) * orbitStrength * 0.05;
-                        
-                        p.orbitAngle += p.orbitSpeed * deltaTime * (1 + orbitStrength);
+                    // 2. Velocity following
+                    if (Math.abs(hand.velocity.x) > 0.001 || Math.abs(hand.velocity.y) > 0.001) {
+                        p.vx += hand.velocity.x * 25;
+                        p.vy += -hand.velocity.y * 25;
                     }
                     
-                    // 3. PULSE WAVE from hand
-                    const pulseWave = hand.pulse * Math.sin(dist * 0.3 - time * 2);
-                    p.vx += dx / dist * pulseWave * 0.02;
-                    p.vy += dy / dist * pulseWave * 0.02;
-                    p.vz += dz / dist * pulseWave * 0.02;
-                    
-                    // 4. SPIRAL MOVEMENT
-                    if (hand.twoFingers) {
-                        const spiralStrength = 0.1;
-                        const spiralAngle = Math.atan2(dy, dx);
-                        p.vx += Math.cos(spiralAngle + time) * spiralStrength;
-                        p.vy += Math.sin(spiralAngle + time) * spiralStrength;
+                    // 3. Orbital motion around hand
+                    if (dist < 25) {
+                        const orbitIntensity = Math.max(0, 1 - dist/25) * CONFIG.SWIRL_INTENSITY;
+                        const orbitX = Math.cos(p.orbitAngle + hand.orbitAngle) * p.orbitRadius;
+                        const orbitY = Math.sin(p.orbitAngle + hand.orbitAngle) * p.orbitRadius * 0.5;
+                        
+                        p.vx += (orbitX - (p.x - handX)) * 0.02 * orbitIntensity;
+                        p.vy += (orbitY - (p.y - handY)) * 0.02 * orbitIntensity;
+                        
+                        p.orbitAngle += p.orbitSpeed * deltaTime * (1 + orbitIntensity);
                     }
                     
-                    // Update colors when two fingers
+                    // 4. Perlin noise for organic movement
+                    const noiseX = Math.sin(time * 0.5 + p.noiseOffset) * 0.01;
+                    const noiseY = Math.cos(time * 0.7 + p.noiseOffset * 1.3) * 0.01;
+                    const noiseZ = Math.sin(time * 0.3 + p.noiseOffset * 0.7) * 0.01;
+                    
+                    p.vx += noiseX;
+                    p.vy += noiseY;
+                    p.vz += noiseZ;
+                    
+                    // 5. Update colors
                     if (hand.twoFingers) {
-                        const palette = colorPalettes[hand.colorIndex % colorPalettes.length];
-                        const color = palette[p.group % palette.length];
-                        
-                        colors[i3] = color[0] * (0.8 + 0.2 * Math.sin(time + p.colorOffset));
-                        colors[i3 + 1] = color[1] * (0.8 + 0.2 * Math.cos(time + p.colorOffset + 1));
-                        colors[i3 + 2] = color[2] * (0.8 + 0.2 * Math.sin(time + p.colorOffset + 2));
+                        // Color change mode
+                        const color = currentTheme.colors[p.colorGroup];
+                        colors[i3] = color[0] * (0.8 + 0.2 * Math.sin(time * 2 + p.colorPhase));
+                        colors[i3 + 1] = color[1] * (0.8 + 0.2 * Math.sin(time * 2 + p.colorPhase + 1));
+                        colors[i3 + 2] = color[2] * (0.8 + 0.2 * Math.sin(time * 2 + p.colorPhase + 2));
                     } else {
-                        // Natural subtle colors
-                        colors[i3] = 0.3 + 0.2 * Math.sin(p.x * 0.05 + time * 0.5 + p.colorOffset);
-                        colors[i3 + 1] = 0.3 + 0.2 * Math.sin(p.y * 0.05 + time * 0.7 + p.colorOffset);
-                        colors[i3 + 2] = 0.4 + 0.2 * Math.sin(p.z * 0.05 + time * 0.9 + p.colorOffset);
+                        // Normal subtle colors
+                        colors[i3] = 0.3 + 0.2 * Math.sin(p.x * 0.03 + time * 0.5 + p.colorPhase);
+                        colors[i3 + 1] = 0.3 + 0.2 * Math.sin(p.y * 0.03 + time * 0.7 + p.colorPhase);
+                        colors[i3 + 2] = 0.4 + 0.2 * Math.sin(p.z * 0.03 + time * 0.9 + p.colorPhase);
                     }
                     
-                    // Update particle size based on hand gesture
-                    sizes[i] = p.size * hand.size;
+                    p.colorPhase += deltaTime * 0.5;
                     
                 } else {
-                    // Return to original position with orbit
-                    p.orbitAngle += p.orbitSpeed * deltaTime * 0.3;
-                    
+                    // No hand detected - return to original positions with orbit
                     const tx = p.originalX + Math.cos(p.orbitAngle) * p.orbitRadius;
-                    const ty = p.originalY + Math.sin(p.orbitAngle) * p.orbitRadius * 0.5;
-                    const tz = p.originalZ + Math.sin(p.orbitAngle + time) * p.orbitRadius * 0.3;
+                    const ty = p.originalY + Math.sin(p.orbitAngle) * p.orbitRadius * 0.3;
+                    const tz = p.originalZ + Math.sin(p.orbitAngle + time) * p.orbitRadius * 0.2;
                     
-                    p.vx += (tx - p.x) * 0.02;
-                    p.vy += (ty - p.y) * 0.02;
-                    p.vz += (tz - p.z) * 0.02;
+                    p.vx += (tx - p.x) * 0.015;
+                    p.vy += (ty - p.y) * 0.015;
+                    p.vz += (tz - p.z) * 0.015;
                     
-                    // Subtle natural colors
-                    colors[i3] = 0.3 + 0.2 * Math.sin(p.x * 0.03 + time * 0.3);
-                    colors[i3 + 1] = 0.3 + 0.2 * Math.sin(p.y * 0.03 + time * 0.5 + 1);
-                    colors[i3 + 2] = 0.4 + 0.2 * Math.sin(p.z * 0.03 + time * 0.7 + 2);
+                    p.orbitAngle += p.orbitSpeed * deltaTime * 0.2;
                     
-                    sizes[i] = p.size;
+                    // Natural colors
+                    colors[i3] = 0.3 + 0.15 * Math.sin(p.x * 0.02 + time * 0.3);
+                    colors[i3 + 1] = 0.3 + 0.15 * Math.sin(p.y * 0.02 + time * 0.5 + 1);
+                    colors[i3 + 2] = 0.4 + 0.15 * Math.sin(p.z * 0.02 + time * 0.7 + 2);
                 }
                 
                 // Update position
@@ -277,27 +503,26 @@
                 p.y += p.vy;
                 p.z += p.vz;
                 
-                // Soft boundary
-                const boundary = 35;
-                const softness = 0.95;
-                
-                if (Math.abs(p.x) > boundary) p.vx *= -softness;
-                if (Math.abs(p.y) > boundary) p.vy *= -softness;
-                if (Math.abs(p.z) > boundary) p.vz *= -softness;
+                // Soft boundary constraints
+                if (Math.abs(p.x) > CONFIG.BOUNDARY) p.vx *= -0.5;
+                if (Math.abs(p.y) > CONFIG.BOUNDARY) p.vy *= -0.5;
+                if (Math.abs(p.z) > CONFIG.BOUNDARY) p.vz *= -0.5;
                 
                 // Update buffers
                 positions[i3] = p.x;
                 positions[i3 + 1] = p.y;
                 positions[i3 + 2] = p.z;
+                
+                sizes[i] = p.size;
             }
             
-            particleSystem.material.size = hand.size;
+            // Mark buffers as needing update
             particleSystem.geometry.attributes.position.needsUpdate = true;
             particleSystem.geometry.attributes.color.needsUpdate = true;
             particleSystem.geometry.attributes.size.needsUpdate = true;
         }
 
-        // ========== INIT CAMERA ==========
+        // ========== INITIALIZE CAMERA ==========
         async function initCamera() {
             video = document.createElement('video');
             video.style.display = 'none';
@@ -317,9 +542,11 @@
                 await video.play();
                 
                 startHandTracking();
+                updateStatus('camera', true);
                 return true;
             } catch (error) {
                 console.error("Camera error:", error);
+                updateStatus('camera', false);
                 return false;
             }
         }
@@ -343,7 +570,11 @@
             
             const camera = new Camera(video, {
                 onFrame: async () => {
-                    await hands.send({image: video});
+                    try {
+                        await hands.send({image: video});
+                    } catch (e) {
+                        console.warn("Hand tracking frame error:", e);
+                    }
                 },
                 width: 640,
                 height: 480
@@ -352,13 +583,13 @@
             camera.start();
         }
 
-        // ========== PROCESS HAND ==========
+        // ========== PROCESS HAND RESULTS ==========
         function processHandResults(results) {
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 hand.detected = true;
                 const landmarks = results.multiHandLandmarks[0];
                 
-                // Wrist position
+                // Update hand position
                 const wrist = landmarks[0];
                 hand.position.x = wrist.x;
                 hand.position.y = wrist.y;
@@ -367,37 +598,29 @@
                 hand.smooth.x += (hand.position.x - hand.smooth.x) * CONFIG.SMOOTHING;
                 hand.smooth.y += (hand.position.y - hand.smooth.y) * CONFIG.SMOOTHING;
                 
-                // Detect gestures
+                // Calculate velocity
+                hand.velocity.x = hand.position.x - hand.lastPos.x;
+                hand.velocity.y = hand.position.y - hand.lastPos.y;
+                hand.lastPos.x = hand.position.x;
+                hand.lastPos.y = hand.position.y;
+                
+                // Get key landmarks
                 const thumbTip = landmarks[4];
                 const indexTip = landmarks[8];
                 const middleTip = landmarks[12];
                 const ringTip = landmarks[16];
                 const pinkyTip = landmarks[20];
-                
                 const wristPos = landmarks[0];
-                const middleBase = landmarks[9];
                 
                 // Calculate distances for gesture detection
-                const thumbIndexDist = Math.sqrt(
-                    Math.pow(thumbTip.x - indexTip.x, 2) + 
-                    Math.pow(thumbTip.y - indexTip.y, 2)
-                );
+                const thumbIndexDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
+                const indexMiddleDist = Math.hypot(indexTip.x - middleTip.x, indexTip.y - middleTip.y);
                 
-                const indexMiddleDist = Math.sqrt(
-                    Math.pow(indexTip.x - middleTip.x, 2) + 
-                    Math.pow(indexTip.y - middleTip.y, 2)
-                );
-                
-                // Fist detection (all fingers close to palm)
-                const fistThreshold = 0.15;
+                // Detect fist (all fingers close to wrist)
                 let fingersClose = true;
-                
                 for (let i = 8; i <= 20; i += 4) {
-                    const dist = Math.sqrt(
-                        Math.pow(landmarks[i].x - wristPos.x, 2) + 
-                        Math.pow(landmarks[i].y - wristPos.y, 2)
-                    );
-                    if (dist > fistThreshold) {
+                    const dist = Math.hypot(landmarks[i].x - wristPos.x, landmarks[i].y - wristPos.y);
+                    if (dist > 0.15) {
                         fingersClose = false;
                         break;
                     }
@@ -406,25 +629,47 @@
                 hand.fist = fingersClose;
                 hand.palmOpen = !fingersClose && thumbIndexDist > 0.1;
                 
-                // Two finger detection (peace sign)
-                const twoFingerThreshold = 0.08;
+                // Detect two fingers (peace sign)
                 hand.twoFingers = (
-                    thumbIndexDist < twoFingerThreshold && 
-                    indexMiddleDist > 0.1 && 
+                    thumbIndexDist < 0.08 && 
+                    indexMiddleDist > 0.12 && 
                     !hand.fist
                 );
                 
-                // Change color when two fingers detected
+                // Change color theme when two fingers detected
                 if (hand.twoFingers && !hand.lastTwoFingers) {
-                    hand.colorIndex++;
+                    colorThemeIndex = (colorThemeIndex + 1) % colorThemes.length;
+                    updateBrandingColor();
                 }
                 hand.lastTwoFingers = hand.twoFingers;
                 
+                updateStatus('hand', true);
             } else {
                 hand.detected = false;
                 hand.fist = false;
                 hand.palmOpen = true;
                 hand.twoFingers = false;
+                hand.velocity.x = hand.velocity.y = 0;
+                
+                updateStatus('hand', false);
+            }
+        }
+
+        // ========== UPDATE STATUS INDICATORS ==========
+        function updateStatus(type, active) {
+            const element = document.getElementById(type + 'Status');
+            if (element) {
+                element.classList.toggle('active', active);
+            }
+        }
+
+        // ========== UPDATE BRANDING COLOR ==========
+        function updateBrandingColor() {
+            const theme = colorThemes[colorThemeIndex];
+            const brandName = document.querySelector('.brand-name');
+            if (brandName) {
+                const color = theme.colors[0];
+                brandName.style.textShadow = `0 0 20px rgba(${Math.floor(color[0]*255)}, ${Math.floor(color[1]*255)}, ${Math.floor(color[2]*255)}, 0.8)`;
             }
         }
 
@@ -439,46 +684,60 @@
             updateParticles(deltaTime);
             
             // Dynamic camera movement
-            const camTime = currentTime * 0.001;
+            const timeSec = currentTime * 0.001;
             
             if (hand.detected) {
                 // Camera follows hand with smooth offset
-                const handX = (hand.smooth.x - 0.5) * 20;
-                const handY = (0.5 - hand.smooth.y) * 15;
+                const targetX = (hand.smooth.x - 0.5) * 15;
+                const targetY = (0.5 - hand.smooth.y) * 10;
+                const targetZ = 30 + Math.sin(timeSec * 0.3) * 2;
                 
-                camera.position.x += (handX - camera.position.x) * 0.05;
-                camera.position.y += (handY - camera.position.y) * 0.05;
-                camera.position.z = 25 + Math.sin(camTime * 0.5) * 3;
+                camera.position.x += (targetX - camera.position.x) * 0.05;
+                camera.position.y += (targetY - camera.position.y) * 0.05;
+                camera.position.z += (targetZ - camera.position.z) * 0.05;
                 
-                camera.lookAt(handX * 0.5, handY * 0.5, 0);
+                camera.lookAt(targetX * 0.5, targetY * 0.5, 0);
             } else {
                 // Automatic camera movement
-                camera.position.x = Math.sin(camTime * 0.2) * 10;
-                camera.position.y = Math.cos(camTime * 0.3) * 5;
-                camera.position.z = 30 + Math.sin(camTime * 0.4) * 5;
+                camera.position.x = Math.sin(timeSec * 0.1) * 8;
+                camera.position.y = Math.cos(timeSec * 0.15) * 4;
+                camera.position.z = 32 + Math.sin(timeSec * 0.2) * 3;
                 camera.lookAt(0, 0, 0);
             }
             
             renderer.render(scene, camera);
         }
 
-        // ========== RESIZE ==========
+        // ========== WINDOW RESIZE ==========
         function onResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // ========== INIT ==========
+        // ========== INITIALIZE SYSTEM ==========
         async function init() {
+            console.log(`🎮 Initializing ${BRSystem.author}'s Hand Particle System v${BRSystem.version}`);
+            
             initThreeJS();
-            await initCamera();
+            
+            try {
+                await initCamera();
+            } catch (error) {
+                console.warn("Camera initialization failed, running in demo mode");
+            }
+            
+            // Start animation
             requestAnimationFrame(animate);
             
+            // Add event listeners
             window.addEventListener('resize', onResize);
+            
+            // Initial branding color
+            updateBrandingColor();
         }
 
-        // Start
+        // ========== START EVERYTHING ==========
         init();
     </script>
 </body>
